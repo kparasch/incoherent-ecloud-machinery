@@ -4,395 +4,257 @@ import scipy.io as sio
 import os
 import time
 import shutil
+from collections import deque
+import sys
+sys.path.append('..')
+import kostas_filemanager as kfm
+import refinement_helpers as rh
+import volume_helpers as vh
 
-import myfilemanager as mfm
-import myfilemanager_sixtracklib as mfm_stl
-from TricubicInterpolation import cTricubic as ti
-
-import PyPIC.PyPIC_Scatter_Gather as PyPICSC
-import PyPIC.geom_impact_poly as poly
-from PyPIC.MultiGrid import AddInternalGrid
-
-def symmetrize(A):
-    shape = A.shape
-    assert len(shape) == 2
-    assert shape[0] % 2 == 1
-    assert shape[1] % 2 == 1
-    ix0 = shape[0] // 2
-    iy0 = shape[1] // 2
-
-    newA = np.empty([ix0+1,iy0+1])
-    newA[0,0] = A[ix0,iy0]
-    newA[1:,0] = 0.5*(A[0:ix0,iy0][::-1] + A[ix0+1:,iy0])
-    newA[0,1:] = 0.5*(A[ix0,0:iy0][::-1] + A[ix0,iy0+1:])
-    newA[1:,1:] = 0.25*( A[ix0+1:,iy0+1:] +
-                         A[0:ix0,iy0+1:][::-1,:] + 
-                         A[ix0+1:,0:iy0][:,::-1] + 
-                         A[0:ix0,0:iy0][::-1,::-1]
-                       )
-
-    retA=np.empty_like(A)
-
-    retA[ix0,iy0] = newA[0,0]
-
-    retA[ix0+1:,iy0] = newA[1:,0]
-    retA[0:ix0,iy0] = newA[1:,0][::-1]
-    retA[ix0,iy0+1:] = newA[0,1:]
-    retA[ix0,0:iy0] = newA[0,1:][::-1]
-
-    retA[ix0+1:,iy0+1:] = newA[1:,1:]
-    retA[0:ix0,iy0+1:] = newA[1:,1:][::-1,:]
-    retA[ix0+1:,0:iy0] = newA[1:,1:][:,::-1]
-    retA[0:ix0,0:iy0] = newA[1:,1:][::-1,::-1]
-
-    return retA
-
-def setup_pic(fname, magnify=2., N_nodes_discard=10, symmetric_slice_2D=True):
-
-    ob = mfm.myloadmat_to_obj(fname)
-    Dh_magnify = (ob.xg[1]-ob.xg[0])/magnify
-    x_magnify = -ob.xg[N_nodes_discard]
-    y_magnify = -ob.yg[N_nodes_discard]
-    
-    if symmetric_slice_2D:
-    	pic_rho = symmetrize(ob.rho[0,:,:])
-    	pic_phi = symmetrize(ob.phi[0,:,:])
-    else:
-    	pic_rho = ob.rho[0,:,:].copy()
-    	pic_phi = ob.phi[0,:,:].copy()
-    xg_out = ob.xg.copy()
-    yg_out = ob.yg.copy()
-    zg_out = ob.zg.copy()
-    del ob
-
-    chamb = poly.polyg_cham_geom_object({'Vx':np.array([xg_out[-1], xg_out[0], xg_out[0], xg_out[-1]]),
-                                       'Vy':np.array([yg_out[-1], yg_out[-1], yg_out[0], yg_out[0]]),
-                                       'x_sem_ellip_insc':1e-3,
-                                       'y_sem_ellip_insc':1e-3})
-
-    pic = PyPICSC.PyPIC_Scatter_Gather(xg=xg_out, yg = yg_out)
-    pic.phi = pic_phi
-    #pic.efx = ob.Ex[0, :, :]
-    #pic.efy = ob.Ey[0, :, :]
-    pic.rho = pic_rho
-    pic.chamb = chamb
-    
-    #Ex_picint, _ = pic.gather(x_tint, y_tint)
-    
-    
-    # Internal pic
-    picdg = AddInternalGrid(pic, 
-            x_min_internal=-x_magnify,
-            x_max_internal=x_magnify, 
-            y_min_internal=-y_magnify, 
-            y_max_internal=y_magnify, 
-            Dh_internal=Dh_magnify, 
-            N_nodes_discard = N_nodes_discard)
-    picinside = picdg.pic_internal 
-    
-    picinside.rho = np.reshape(pic.gather_rho(picinside.xn, picinside.yn),
-            (picinside.Nxg, picinside.Nyg))
-    picinside.solve(flag_verbose = True, pic_external=pic)
-    
-    #rho_insideint = picinside.gather_rho(x_tint, y_tint)
-    #Ex_inside, _ = picinside.gather(x_tint, y_tint)
-    #phi_inside = picinside.gather_phi(x_tint, y_tint)
-
-    return pic, picinside, zg_out
-
-def get_slice(picoutside, picinside, fname, islice, symmetric_slice_2D=True):
-    
-    ob = mfm.myloadmat_to_obj(fname)
-    if symmetric_slice_2D:
-    	rho = symmetrize(ob.rho[islice, :, :])
-    	phi = symmetrize(ob.phi[islice, :, :])
-    else:
-    	rho = ob.rho[islice, :, :].copy()
-    	phi = ob.phi[islice, :, :].copy()
-    del ob
-
-    picoutside.phi = phi
-    picoutside.rho = rho
-
-    picinside.rho = np.reshape( picoutside.gather_rho(picinside.xn, picinside.yn),
-                               (picinside.Nxg, picinside.Nyg))
-    picinside.solve(flag_verbose = True, pic_external = picoutside)
-
-    phi_refined = picinside.gather_phi(picinside.xn, picinside.yn)
-
-    return phi_refined.reshape(picinside.Nxg, picinside.Nyg)
-
-def phi_n_e_slices(pic_out, pic_in, fname, islice, dz, max_slice, symmetric_slice_2D=True):
-    slices = np.zeros([3,pic_in.Nxg, pic_in.Nyg])
-    slices[0,:,:] = get_slice(pic_out, pic_in, fname, islice - 1, symmetric_slice_2D) 
-    slices[1,:,:] = get_slice(pic_out, pic_in, fname, islice, symmetric_slice_2D) 
-    if islice + 1 < max_slice:
-        slices[2,:,:] = get_slice(pic_out, pic_in, fname, islice + 1, symmetric_slice_2D) 
-
-    ex_slice = np.zeros([pic_in.Nxg,pic_in.Nyg])
-    ey_slice = np.zeros([pic_in.Nxg,pic_in.Nyg])
-    ez_slice = np.zeros([pic_in.Nxg,pic_in.Nyg])
-
-    ex_slice[1:-1,:] = (0.5*(slices[1,2:,:] - slices[1,0:-2,:]))/pic_in.Dh
-    ey_slice[:,1:-1] = (0.5*(slices[1,:,2:] - slices[1,:,0:-2]))/pic_in.Dh 
-    ez_slice[:,:] = (0.5*(slices[2,:,:] - slices[0,:,:]))/dz
-    return slices[1,:,:], ex_slice, ey_slice, ez_slice
-
-def exact_slice(slices, z0_in, x0_in, y0_in, dz, dx, dy):
-    tinterp = ti.Tricubic_Interpolation(A=slices, 
-            x0=z0_in, y0=x0_in, z0=y0_in,
-            dx=dz, dy=dx_in, dz=dy_in)
-    if do_kicks:
-        tinterp_dx = ti.Tricubic_Interpolation(A=ex_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-        tinterp_dy = ti.Tricubic_Interpolation(A=ey_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-        tinterp_dz = ti.Tricubic_Interpolation(A=ez_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-
-    for i in range(Nd, pic_out.Nxg - Nd):
-        ii = i - Nd
-        for j in range(Nd, pic_out.Nyg - Nd):
-            jj = j - Nd
-#            is_inside = tinterp.is_inside_box( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-#            if not is_inside: 
-#                ix, iy, iz = tinterp.coords_to_indices( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-#                print(ix, iy, iz)
-#                continue
-            phi_slice_exact[ii,jj,0] = tinterp.val(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,1] = tinterp.ddy(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,2] = tinterp.ddz(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,3] = tinterp.ddx(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,4] = tinterp.ddydz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,5] = tinterp.ddxdy(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,6] = tinterp.ddxdz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,7] = tinterp.ddxdydz( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
+from TricubicInterpolation import pyTricubic as pyTI
 
 #ob = mfm.myloadmat_to_obj('pinch_cut.mat')
 start_time = time.time()
 N_nodes_discard = 10
-magnify = 4
-do_kicks = True
-symmetric2D = True
+magnify_transverse_in = 4.
+magnify_longitudinal_in = 2.
+demagnify_transverse_out = 2.0
+demagnify_longitudinal_out = 1.0
+compression_opts = 0
+#do_kicks = True
+do_symmetric2D = False
+debug = False
 #symmetric2D=True
 
 symm_str = ''
-if symmetric2D: symm_str = '_symm2D'
+if do_symmetric2D: symm_str = '_symm2D'
 
-pinch_in = 'pinch1_cut'
-fname = 'eclouds/' + pinch_in + '.mat'
-pinch_out = 'refined_'+pinch_in+symm_str+'_mag%.1f.h5'%magnify
-temp_folder = pinch_out+'.temp'
-if not os.path.exists(temp_folder):
-    os.mkdir(temp_folder)
+pinch_in = 'Pinch7_cut'
+pinches_folder = 'eclouds/'
+fname = pinches_folder + pinch_in + '.h5'
+pinch_out = 'refined_'+pinch_in+symm_str+'_MTI%.1f_MLI%.1f_DTO%.1f_DLO%.1f.h5'%(magnify_transverse_in, magnify_longitudinal_in, demagnify_transverse_out, demagnify_longitudinal_out)
+out_fname = pinches_folder+pinch_out
+out_efname = pinches_folder + 'e_' + pinch_out
 
 print('Pinch in: ' + pinch_in)
-print('Magnify = %f'%magnify)
-compression_opts = 0
-pic_out, pic_in, zg = setup_pic(fname, magnify=magnify, N_nodes_discard=N_nodes_discard, symmetric_slice_2D=symmetric2D)
-
-print('Max x = %f'%abs(pic_out.xg[0]))
-print('Max y = %f'%abs(pic_out.yg[0]))
-dx_in = pic_in.xg[1] - pic_in.xg[0]
-dy_in = pic_in.yg[1] - pic_in.yg[0]
-dz = zg[1] - zg[0]
-
-x0_in = pic_in.xg[0]
-y0_in = pic_in.yg[0]
-
-slices = np.zeros([4,pic_in.Nxg, pic_in.Nyg])
-if do_kicks:
-    ex_slices = np.zeros([4,pic_in.Nxg, pic_in.Nyg])
-    ey_slices = np.zeros([4,pic_in.Nxg, pic_in.Nyg])
-    ez_slices = np.zeros([4,pic_in.Nxg, pic_in.Nyg])
-Nd = N_nodes_discard + 1
-phi_slice_exact = np.zeros([pic_out.Nxg-2*Nd, pic_out.Nyg-2*Nd, 8])
-if do_kicks:
-    ex_slice_exact = np.zeros([pic_out.Nxg-2*Nd, pic_out.Nyg-2*Nd, 8])
-    ey_slice_exact = np.zeros([pic_out.Nxg-2*Nd, pic_out.Nyg-2*Nd, 8])
-    ez_slice_exact = np.zeros([pic_out.Nxg-2*Nd, pic_out.Nyg-2*Nd, 8])
-xg_e = pic_out.xg[Nd:-Nd]
-yg_e = pic_out.yg[Nd:-Nd]
-zg_e = zg[2:-2]
-n_slices = len(zg)
-
-print('Number of slices: {}'.format(n_slices))
-
-for islice in [1,2,3]:
-    if do_kicks:
-        slices[islice-1, :, :], ex_slices[islice-1, :, :], ey_slices[islice-1, :, :], ez_slices[islice-1, :, :] = phi_n_e_slices(pic_out, pic_in, fname, islice, dz, n_slices, symmetric_slice_2D=symmetric2D)
-    else:
-        slices[islice-1,:,:] = get_slice(pic_out, pic_in, fname, islice, symmetric_slice_2D=symmetric2D)
-
-for k in range(1,n_slices-3):
-    z0_in = zg[k] 
-    print('Slice {}/{}'.format(k-1, n_slices-4))
-    #slices[3] = get_slice(pic_out, pic_in, fname, k+3)
-    if do_kicks:
-        slices[3, :, :], ex_slices[3, :, :], ey_slices[3, :, :], ez_slices[3, :, :] = phi_n_e_slices(pic_out, pic_in, fname, k+3, dz, n_slices, symmetric_slice_2D=symmetric2D)
-    else:
-        slices[3,:,:] = get_slice(pic_out, pic_in, fname, k+3, symmetric_slice_2D=symmetric2D)
-
-    tinterp = ti.Tricubic_Interpolation(A=slices, 
-            x0=z0_in, y0=x0_in, z0=y0_in,
-            dx=dz, dy=dx_in, dz=dy_in)
-    if do_kicks:
-        tinterp_dx = ti.Tricubic_Interpolation(A=ex_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-        tinterp_dy = ti.Tricubic_Interpolation(A=ey_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-        tinterp_dz = ti.Tricubic_Interpolation(A=ez_slices, 
-                x0=z0_in, y0=x0_in, z0=y0_in,
-                dx=dz, dy=dx_in, dz=dy_in)
-
-    for i in range(Nd, pic_out.Nxg - Nd):
-        ii = i - Nd
-        for j in range(Nd, pic_out.Nyg - Nd):
-            jj = j - Nd
-#            is_inside = tinterp.is_inside_box( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-#            if not is_inside: 
-#                ix, iy, iz = tinterp.coords_to_indices( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-#                print(ix, iy, iz)
-#                continue
-            phi_slice_exact[ii,jj,0] = tinterp.val(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,1] = tinterp.ddy(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,2] = tinterp.ddz(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,3] = tinterp.ddx(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,4] = tinterp.ddydz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,5] = tinterp.ddxdy(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,6] = tinterp.ddxdz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            phi_slice_exact[ii,jj,7] = tinterp.ddxdydz( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-            if do_kicks:
-                ex_slice_exact[ii,jj,0] = tinterp_dx.val(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,1] = tinterp_dx.ddy(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,2] = tinterp_dx.ddz(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,3] = tinterp_dx.ddx(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,4] = tinterp_dx.ddydz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,5] = tinterp_dx.ddxdy(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,6] = tinterp_dx.ddxdz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ex_slice_exact[ii,jj,7] = tinterp_dx.ddxdydz( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,0] = tinterp_dy.val(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,1] = tinterp_dy.ddy(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,2] = tinterp_dy.ddz(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,3] = tinterp_dy.ddx(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,4] = tinterp_dy.ddydz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,5] = tinterp_dy.ddxdy(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,6] = tinterp_dy.ddxdz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ey_slice_exact[ii,jj,7] = tinterp_dy.ddxdydz( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,0] = tinterp_dz.val(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,1] = tinterp_dz.ddy(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,2] = tinterp_dz.ddz(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,3] = tinterp_dz.ddx(     z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,4] = tinterp_dz.ddydz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,5] = tinterp_dz.ddxdy(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,6] = tinterp_dz.ddxdz(   z0_in + dz, pic_out.xg[i], pic_out.yg[j])
-                ez_slice_exact[ii,jj,7] = tinterp_dz.ddxdydz( z0_in + dz, pic_out.xg[i], pic_out.yg[j])
+print('Magnify = %f'%magnify_transverse_in)
+pic_out, pic_in, zg = rh.setup_pic(fname, magnify=magnify_transverse_in, N_nodes_discard=N_nodes_discard, symmetric_slice_2D=do_symmetric2D)
 
 
-    #sio.savemat('temp/slice%d.mat'%k, {'phi_slice_exact' : phi_slice_exact}, oned_as = 'row')
-    mfm_stl.dict_to_h5({'phi_slice_exact' : phi_slice_exact}, temp_folder+'/slice%d.h5'%k, compression_opts=compression_opts)
-    if do_kicks:
-        mfm_stl.dict_to_h5({'ex_slice_exact' : ex_slice_exact}, temp_folder+'/ex_slice%d.h5'%k, compression_opts=compression_opts)
-        mfm_stl.dict_to_h5({'ey_slice_exact' : ey_slice_exact}, temp_folder+'/ey_slice%d.h5'%k, compression_opts=compression_opts)
-        mfm_stl.dict_to_h5({'ez_slice_exact' : ez_slice_exact}, temp_folder+'/ez_slice%d.h5'%k, compression_opts=compression_opts)
 
-    slices[0, :, :] = slices[1, :, :]
-    slices[1, :, :] = slices[2, :, :]
-    slices[2, :, :] = slices[3, :, :]
-    if do_kicks:
-        ex_slices[0, :, :] = ex_slices[1, :, :]
-        ex_slices[1, :, :] = ex_slices[2, :, :]
-        ex_slices[2, :, :] = ex_slices[3, :, :]
-        ey_slices[0, :, :] = ey_slices[1, :, :]
-        ey_slices[1, :, :] = ey_slices[2, :, :]
-        ey_slices[2, :, :] = ey_slices[3, :, :]
-        ez_slices[0, :, :] = ez_slices[1, :, :]
-        ez_slices[1, :, :] = ez_slices[2, :, :]
-        ez_slices[2, :, :] = ez_slices[3, :, :]
-nx = pic_out.Nxg-2*Nd
-ny = pic_out.Nyg-2*Nd
-#x0 = pic.out.xg[Nd]
-#y0 = pic.out.yg[Nd]
-#z0 = pic.out.zg[1:-2]
-del pic_out
-del pic_in
-del slices
-if do_kicks:
-    del ex_slices
-    del ey_slices
-    del ez_slices
+dz_original = zg[1]-zg[0]
+dz_inside = dz_original/magnify_longitudinal_in
+zg_inside = np.linspace(zg[0],zg[-1],(zg[-1]-zg[0])/dz_inside+1)
 
-phi_e = np.zeros([n_slices-4, nx, ny, 8])
-if do_kicks:
-    ex_e = np.zeros([n_slices-4, nx, ny, 8])
-    ey_e = np.zeros([n_slices-4, nx, ny, 8])
-    ez_e = np.zeros([n_slices-4, nx, ny, 8])
-for i in range(1,n_slices-3):
-    print('Reading Slice: %d'%i)
-    ob = mfm_stl.h5_to_dict(temp_folder+'/slice%d.h5'%i)
-    phi_e[i-1,:,:,:] = ob['phi_slice_exact'][:,:,:]
-    #ob = mfm.myloadmat_to_obj('temp/slice%d.mat'%i)
-    #phi_e[i-1,:,:,:] = ob.phi_slice_exact[:,:,:]
-    del ob
-    if do_kicks:
-        ob_ex = mfm_stl.h5_to_dict(temp_folder+'/ex_slice%d.h5'%i)
-        ex_e[i-1,:,:,:] = ob_ex['ex_slice_exact'][:,:,:]
-        del ob_ex
-        ob_ey = mfm_stl.h5_to_dict(temp_folder+'/ey_slice%d.h5'%i)
-        ey_e[i-1,:,:,:] = ob_ey['ey_slice_exact'][:,:,:]
-        del ob_ey
-        ob_ez = mfm_stl.h5_to_dict(temp_folder+'/ez_slice%d.h5'%i)
-        ez_e[i-1,:,:,:] = ob_ez['ez_slice_exact'][:,:,:]
-        del ob_ez
-        
-if symmetric2D:
-    xg_e = xg_e[nx//2:]
-    yg_e = yg_e[ny//2:]
-    phi_e = phi_e[:,nx//2:,ny//2:,:]
+dz_new = dz_original*demagnify_longitudinal_out
+zg_new = np.linspace(zg[3],zg[-4],(zg[-4]-zg[3])/dz_new+1) # skip three first and three last slices
+#dz_new = demagnify_longitudinal_out*dz_original
 
-    phi_e[:,0,:,1] = 0.
-    phi_e[:,:,0,2] = 0.
 
-    phi_e[:,0,:,4] = 0.
-    phi_e[:,:,0,4] = 0.
+Nd = N_nodes_discard + 3
 
-    phi_e[:,0,:,5] = 0.
+dx_new = pic_out.dx*demagnify_transverse_out
+nx_new = int((pic_out.xg[-Nd-1] - pic_out.xg[Nd])/dx_new) + 1
+xg_new = np.linspace( pic_out.xg[Nd], pic_out.xg[-Nd-1], nx_new)
 
-    phi_e[:,:,0,6] = 0.
+dy_new = pic_out.dy*demagnify_transverse_out
+ny_new = int((pic_out.yg[-Nd-1] - pic_out.yg[Nd])/dy_new) + 1
+yg_new = np.linspace( pic_out.yg[Nd], pic_out.yg[-Nd-1], ny_new)
 
-    phi_e[:,0,:,7] = 0.
-    phi_e[:,:,0,7] = 0.
+#print(zg[:5])
+#print(zg_new[:5])
+#print(zg[-5:])
+#print(zg_new[-5:])
+#print(zg.shape, zg_inside.shape)
 
-    if do_kicks:
-    	ex_e = ex_e[:,nx//2:,ny//2:,:]
-    	ey_e = ey_e[:,nx//2:,ny//2:,:]
-    	ez_e = ez_e[:,nx//2:,ny//2:,:]
+#for ii,zz in enumerate(zg_inside):
+#    rh.get_slice(pic_out, pic_in, fname, zz, symmetric_slice_2D = do_symmetric2D)
+#    print('%d/%d'%(ii,len(zg_inside)))
 
-dd = {'xg' : xg_e,
-      'yg' : yg_e,
-      'zg' : zg_e,
-      'phi' : phi_e.transpose(1,2,0,3)
-     }
+phi_slices = deque()
+ex_slices = deque()
+ey_slices = deque()
+ez_slices = deque()
+z_slices = deque()
 
-if do_kicks:
-    dd_e = {'xg' : xg_e,
-             'yg' : yg_e,
-             'zg' : zg_e,
-             'ex' : ex_e.transpose(1,2,0,3),
-             'ey' : ey_e.transpose(1,2,0,3),
-             'ez' : ez_e.transpose(1,2,0,3)
+for i in range(7):
+    z_slices.append(zg_inside[i])
+    phi_slices.append(rh.get_slice(pic_out,pic_in,fname, zg_inside[i], symmetric_slice_2D=do_symmetric2D))
+    ex_slices.append(rh.ex_from_phi_slice(phi_slices[i], pic_in.Dh))
+    ey_slices.append(rh.ey_from_phi_slice(phi_slices[i], pic_in.Dh))
+ez_slices.append(np.zeros_like(phi_slices[0]))
+for i in range(1,6):
+    ez_slices.append(rh.ez_from_two_phi_slices(phi_slices[i-1], phi_slices[i+1], dz_inside))
+
+Sx = nx_new//2 if do_symmetric2D else 0
+Sy = ny_new//2 if do_symmetric2D else 0
+
+grid_dict = {'xg': xg_new[Sx:],
+             'yg': yg_new[Sy:],
+             'zg': zg_new,
+             'x0': xg_new[Sx],
+             'y0': yg_new[Sy],
+             'z0': zg_new[0],
+             'dx': xg_new[Sx+1] - xg_new[Sx],
+             'dy': yg_new[Sy+1] - yg_new[Sy],
+             'dz': zg_new[1] - zg_new[0],
+             'Nx': len(xg_new),
+             'Ny': len(yg_new),
+             'Nz': len(zg_new)
             }
 
-print('Begin saving..')
-mfm_stl.dict_to_h5(dd, 'eclouds/'+pinch_out, compression_opts=compression_opts)
-if do_kicks:
-    mfm_stl.dict_to_h5(dd_e, 'eclouds/e_'+pinch_out, compression_opts=compression_opts)
+settings_dict = {'magnify_transverse_in': magnify_transverse_in,  
+                 'magnify_longitudinal_in': magnify_longitudinal_in, 
+                 'demagnify_transverse_out': demagnify_transverse_out,
+                 'demagnify_longitudinal_out': demagnify_longitudinal_out,
+                 'symmetric2D': do_symmetric2D
+                }
+
+
+kfm.dict_to_h5(grid_dict, out_fname, compression_opts=compression_opts, group='grid', readwrite_opts='w')
+kfm.dict_to_h5(settings_dict, out_fname, compression_opts=compression_opts, group='settings', readwrite_opts='a')
+kfm.dict_to_h5(grid_dict, out_efname, compression_opts=compression_opts, group='grid', readwrite_opts='w')
+kfm.dict_to_h5(settings_dict, out_efname, compression_opts=compression_opts, group='settings', readwrite_opts='a')
+
+
+slice_index = 7
+kk = 0
+while kk < len(zg_new):
+    z_new = zg_new[kk]
+    z_up = (z_slices[3]+z_slices[4])/2
+    z_lo = (z_slices[2]+z_slices[3])/2
+    if z_new >= z_lo and z_new < z_up:
+        ## extract transverse slices and check transverse new grid
+        phi_out_slice = rh.exact_slice(phi_slices, pic_in.xg, pic_in.yg, z_slices, xg_new, yg_new, z_new)
+        ex_out_slice = rh.exact_slice(ex_slices, pic_in.xg, pic_in.yg, z_slices, xg_new, yg_new, z_new)
+        ey_out_slice = rh.exact_slice(ey_slices, pic_in.xg, pic_in.yg, z_slices, xg_new, yg_new, z_new)
+        ez_out_slice = rh.exact_slice(ez_slices, pic_in.xg, pic_in.yg, z_slices, xg_new, yg_new, z_new)
+
+#        if do_symmetric2D: rh.fix_phi(phi_out_slice, Sx, Sy)
+
+        kfm.dict_to_h5({'phi' : phi_out_slice[Sx:,Sy:,:]}, out_fname, compression_opts=compression_opts, group='slices/slice%d'%kk, readwrite_opts='a')
+        kfm.dict_to_h5({'ex' : ex_out_slice[Sx:,Sy:,:]}, out_efname, compression_opts=compression_opts, group='slices/ex_slice%d'%kk, readwrite_opts='a')
+        kfm.dict_to_h5({'ey' : ey_out_slice[Sx:,Sy:,:]}, out_efname, compression_opts=compression_opts, group='slices/ey_slice%d'%kk, readwrite_opts='a')
+        kfm.dict_to_h5({'ez' : ez_out_slice[Sx:,Sy:,:]}, out_efname, compression_opts=compression_opts, group='slices/ez_slice%d'%kk, readwrite_opts='a')
+        kk += 1
+    elif z_new >= z_up:
+        z_slices.append(zg_inside[slice_index])
+        phi_slices.append(rh.get_slice(pic_out,pic_in,fname, z_slices[-1], symmetric_slice_2D=do_symmetric2D))
+        ex_slices.append(rh.ex_from_phi_slice(phi_slices[-1], pic_in.Dh))
+        ey_slices.append(rh.ey_from_phi_slice(phi_slices[-1], pic_in.Dh))
+        ez_slices.append(rh.ez_from_two_phi_slices(phi_slices[-3], phi_slices[-1], dz_inside))
+
+        z_slices.popleft()
+        phi_slices.popleft()
+        ex_slices.popleft()
+        ey_slices.popleft()
+        ez_slices.popleft()
+        slice_index += 1
+    else:
+        print('Lost synchronization')
+    print('%d/%d, %d/%d'%(kk,len(zg_new),slice_index,len(zg_inside)))
+
+del phi_slices
+del ex_slices
+del ey_slices
+del ez_slices
+del pic_out
+del pic_in
+
+print('Max x = %f'%max(xg_new))
+print('Max y = %f'%max(yg_new))
+
+perc = 0.
+print('Reading... ')
+
+ti_method = 'Exact-Mirror2' if do_symmetric2D else 'Exact'
+
+plot_hist_str = 'plt.hist(bins[:-1], bins, weights=counts, histtype=\'step\', log=True)'
+hist_counts, bins = np.histogram([], bins=2000, range=(-13,0))
+log10_vx_hist = np.zeros_like(hist_counts)
+log10_vy_hist = np.zeros_like(hist_counts)
+log10_vz_hist = np.zeros_like(hist_counts)
+max_log10_vx = -20
+max_log10_vy = -20
+max_log10_vz = -20
+
+
+kk=0
+grid = kfm.h5_to_dict(out_fname, group='grid')
+phi0 = kfm.h5_to_dict(out_fname, group='slices/slice%d'%kk)['phi']
+ex0 = kfm.h5_to_dict(out_efname, group='slices/ex_slice%d'%kk)['ex']
+ey0 = kfm.h5_to_dict(out_efname, group='slices/ey_slice%d'%kk)['ey']
+ez0 = kfm.h5_to_dict(out_efname, group='slices/ez_slice%d'%kk)['ez']
+for kk in range(1,len(zg_new)):
+    if (1.*kk)/slice_index >= perc:
+        print('%d%%... '%(int(kk/slice_index*100)))
+        perc += 0.1
+    phi1 = kfm.h5_to_dict(out_fname, group='slices/slice%d'%kk)['phi']
+    ex1 = kfm.h5_to_dict(out_efname, group='slices/ex_slice%d'%kk)['ex']
+    ey1 = kfm.h5_to_dict(out_efname, group='slices/ey_slice%d'%kk)['ey']
+    ez1 = kfm.h5_to_dict(out_efname, group='slices/ez_slice%d'%kk)['ez']
+    TIphi = pyTI.Tricubic_Interpolation(A=np.array([phi0,phi1]).transpose(1,2,0,3), dx=grid['dx'], dy=grid['dy'], dz=grid['dz'],method=ti_method)
+    TIex = pyTI.Tricubic_Interpolation(A=np.array([ex0,ex1]).transpose(1,2,0,3), dx=grid['dx'], dy=grid['dy'], dz=grid['dz'], method=ti_method)
+    TIey = pyTI.Tricubic_Interpolation(A=np.array([ey0,ey1]).transpose(1,2,0,3), dx=grid['dx'], dy=grid['dy'], dz=grid['dz'], method=ti_method)
+    TIez = pyTI.Tricubic_Interpolation(A=np.array([ez0,ez1]).transpose(1,2,0,3), dx=grid['dx'], dy=grid['dy'], dz=grid['dz'], method=ti_method)
+    iz = 0
+    vx = np.empty([TIphi.ix_bound_up+1 - TIphi.ix_bound_low, TIphi.iy_bound_up+1 - TIphi.iy_bound_low])
+    vy = np.empty([TIphi.ix_bound_up+1 - TIphi.ix_bound_low, TIphi.iy_bound_up+1 - TIphi.iy_bound_low])
+    vz = np.empty([TIphi.ix_bound_up+1 - TIphi.ix_bound_low, TIphi.iy_bound_up+1 - TIphi.iy_bound_low])
+    for ix in range(TIphi.ix_bound_low, TIphi.ix_bound_up+1):
+        for iy in range(TIphi.iy_bound_low, TIphi.iy_bound_up+1):
+            vx[ix,iy] = vh.var_x(ix, iy, iz, TIphi, TIex, dx_new)    
+            vy[ix,iy] = vh.var_y(ix, iy, iz, TIphi, TIey, dy_new)    
+            vz[ix,iy] = vh.var_z(ix, iy, iz, TIphi, TIez, dz_new)    
+
+    lvx = np.log10(vx)
+    lvy = np.log10(vy)
+    lvz = np.log10(vz)
+
+    log10_vx_hist += np.histogram(lvx.flatten(), bins=2000, range=(-13,0))[0]
+    log10_vy_hist += np.histogram(lvy.flatten(), bins=2000, range=(-13,0))[0]
+    log10_vz_hist += np.histogram(lvz.flatten(), bins=2000, range=(-13,0))[0]
+
+    if max_log10_vx < np.max(lvx):
+        max_index_x = np.unravel_index(np.argmax(lvx, axis=None), lvx.shape) + (kk,)
+        max_log10_vx = np.max(lvx)
+
+    if max_log10_vy < np.max(lvy):
+        max_index_y = np.unravel_index(np.argmax(lvy, axis=None), lvy.shape) + (kk,)
+        max_log10_vy = np.max(lvy)
+
+    if max_log10_vz < np.max(lvz):
+        max_index_z = np.unravel_index(np.argmax(lvz, axis=None), lvz.shape) + (kk,)
+        max_log10_vz = np.max(lvz)
+
+    
+
+    phi0, ex0, ey0, ez0 = phi1, ex1, ey1, ez1
+
+print()
+print('Comparison complete.')
+
+print('Log10 Vx max: ', max_log10_vx, ' at ', max_index_x)
+print('Log10 Vy max: ', max_log10_vy, ' at ', max_index_y)
+print('Log10 Vz max: ', max_log10_vz, ' at ', max_index_z)
+
+stats_dict = {'max_log10_vx': max_log10_vx,
+              'max_log10_vy': max_log10_vy,
+              'max_log10_vz': max_log10_vz,
+              'max_index_x': max_index_x,
+              'max_index_y': max_index_y,
+              'max_index_z': max_index_z,
+              'bins': bins,
+              'log10_vx_hist': log10_vx_hist,
+              'log10_vy_hist': log10_vy_hist,
+              'log10_vz_hist': log10_vz_hist,
+              'plot_hist_str': plot_hist_str,
+              'ti_method': ti_method
+             }
+
+kfm.dict_to_h5(stats_dict, out_fname, compression_opts=compression_opts, group='stats', readwrite_opts='a')
+kfm.dict_to_h5(stats_dict, out_efname, compression_opts=compression_opts, group='stats', readwrite_opts='a')
+
 end_time = time.time()
-shutil.rmtree(temp_folder)
 print('Running time: %f mins'%((end_time-start_time)/60.))
 
