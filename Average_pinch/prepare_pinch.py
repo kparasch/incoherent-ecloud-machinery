@@ -158,7 +158,8 @@ while len(results):
 #    dd['Ez']  = dd['Ez'].transpose(1,2,0)
 
 # Save pinch to file
-kfm.dict_to_h5(grid_dict, pinch_name+'.h5', group='grid')
+kfm.dict_to_h5(grid_dict, pinch_name+'.h5', group='grid', readwrite_opts='w')
 for i in range(dd['phi'].shape[0]):
-    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, pinch_name+'.h5', group='slices/slice%d'%i)
+    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, pinch_name+'.h5', group='slices/slice%d'%i, readwrite_opts='a')
 
+kfm.dict_to_h5({'ti_method' : 'FD'}, pinch_name+'.h5', group='stats', readwrite_opts='a')
