@@ -13,9 +13,9 @@ import kostas_filemanager as kfm
 pinch_name = 'Pinch8'
 workers=15
 n_pinches_to_average = 30
-save_efields = True
+#save_efields = True
 save_rho = True
-transpose_to_natural_ordering_of_xyz = True
+#transpose_to_natural_ordering_of_xyz = True
 
 shutil.copytree('AP_source', pinch_name)
 sys.path.append(os.path.abspath(pinch_name))
@@ -162,4 +162,3 @@ kfm.dict_to_h5(grid_dict, pinch_name+'.h5', group='grid')
 for i in range(dd['phi'].shape[0]):
     kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, pinch_name+'.h5', group='slices/slice%d'%i)
 
-#kfm.dict_to_h5(dd,pinch_name+'.h5')
