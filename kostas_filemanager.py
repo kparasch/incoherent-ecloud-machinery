@@ -38,3 +38,7 @@ def dict_to_h5(dict_save, filename, compression_opts=4, group=None, readwrite_op
             else:
                 grp[kk] = dict_save[kk]
 
+def print_h5(filename):
+    def print_this(x,y): print(x,y)
+    with h5py.File(filename,'r') as fid:
+        fid.visititems(print_this)
