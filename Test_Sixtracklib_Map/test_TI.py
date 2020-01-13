@@ -6,6 +6,7 @@ from TricubicInterpolation import cTricubic as cTI
 
 
 device = 'opencl:0.0'
+device = None
 n_part = 1000
 
 lattice = st.Elements()
@@ -46,7 +47,7 @@ for i_part in range(n_part):
     part = pysixtrack.Particles()
     part.x = test_x[i_part]
     part.y = test_y[i_part]
-    part.zeta = test_z[i_part]
+    part.tau = test_z[i_part]
 
     part.partid = i_part
     part.state = 1
@@ -92,12 +93,12 @@ flag = True
 for i_part in range(n_part):
     flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[0] - particles.px[i_part]) < 1.e-13
     flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[1] - particles.py[i_part]) < 1.e-13
-    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.delta[i_part]) < 1.e-13
+    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.ptau[i_part]) < 1.e-13
     if not flag:
         print('i_part: ',i_part)
         print(abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[0] - particles.px[i_part]))
         print(abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[1] - particles.py[i_part]))
-        print(abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.delta[i_part]))
+        print(abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.ptau[i_part]))
         break
 
 if flag:
