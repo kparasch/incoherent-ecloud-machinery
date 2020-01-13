@@ -10,12 +10,12 @@ sys.path.append(os.path.abspath('../'))
 sys.path.append(os.path.abspath('../PyFRIENDS'))
 import kostas_filemanager as kfm
 
-pinch_name = 'Pinch7'
+pinch_name = 'Pinch8'
 workers=15
-n_pinches_to_average = 3000
-save_efields = True
+n_pinches_to_average = 30
+#save_efields = True
 save_rho = True
-transpose_to_natural_ordering_of_xyz = True
+#transpose_to_natural_ordering_of_xyz = True
 
 shutil.copytree('AP_source', pinch_name)
 sys.path.append(os.path.abspath(pinch_name))
@@ -50,7 +50,7 @@ def one_pinch(save_rho=True, save_sigmas=False, save_coords=False,idd=0):
     
     # Record pinch info
     first_ecloud.save_ele_distributions_last_track = True
-    first_ecloud.save_ele_field = True
+#    first_ecloud.save_ele_field = True
     first_ecloud.save_ele_potential = True
     
     first_ecloud._reinitialize() # Needed to prepare storage space
@@ -99,6 +99,15 @@ def kern(i):
 i0 = one_pinch(save_rho=save_rho, save_sigmas=True, save_coords=True)
 dd = kfm.h5_to_dict('temp'+str(i0)+'/temp_pinch.h5')
 os.remove('temp'+str(i0)+'/temp_pinch.h5')
+
+grid_dict = { 'xg' : dd['xg'],
+              'yg' : dd['yg'],
+              'zg' : dd['zg'],
+              'sigma_x' : dd['sigma_x_beam'], 
+              'sigma_y' : dd['sigma_y_beam'], 
+              'sigma_z' : dd['sigma_z_beam']
+            }
+
 dd['phi'] /= 1.*n_pinches_to_average
 if save_rho:
     dd['rho'] /= 1.*n_pinches_to_average
@@ -129,24 +138,28 @@ while len(results):
 #    #print('Running pinch #%d/%d.'%(i,n_pinches_to_average))
 #    dd_temp = one_pinch(save_rho=save_rho, save_sigmas=False, save_coords=False)
 
-if save_efields:
-    dx = dd['xg'][1] - dd['xg'][0]
-    dy = dd['yg'][1] - dd['yg'][0]
-    dz = dd['zg'][1] - dd['zg'][0]
-    dd['Ex'] = np.zeros_like(dd['phi'])
-    dd['Ey'] = np.zeros_like(dd['phi'])
-    dd['Ez'] = np.zeros_like(dd['phi'])
-    
-    dd['Ex'][:,1:-1,:] = -0.5/dx*( dd['phi'][:,2:,:] - dd['phi'][:,0:-2,:])
-    dd['Ey'][:,:,1:-1] = -0.5/dy*( dd['phi'][:,:,2:] - dd['phi'][:,:,0:-2])
-    dd['Ez'][1:-1,:,:] = -0.5/dz*( dd['phi'][2:,::] - dd['phi'][0:-2,:,:])
+#if save_efields:
+#    dx = dd['xg'][1] - dd['xg'][0]
+#    dy = dd['yg'][1] - dd['yg'][0]
+#    dz = dd['zg'][1] - dd['zg'][0]
+#    dd['Ex'] = np.zeros_like(dd['phi'])
+#    dd['Ey'] = np.zeros_like(dd['phi'])
+#    dd['Ez'] = np.zeros_like(dd['phi'])
+#    
+#    dd['Ex'][:,1:-1,:] = -0.5/dx*( dd['phi'][:,2:,:] - dd['phi'][:,0:-2,:])
+#    dd['Ey'][:,:,1:-1] = -0.5/dy*( dd['phi'][:,:,2:] - dd['phi'][:,:,0:-2])
+#    dd['Ez'][1:-1,:,:] = -0.5/dz*( dd['phi'][2:,::] - dd['phi'][0:-2,:,:])
 
-if transpose_to_natural_ordering_of_xyz:
-    dd['phi'] = dd['phi'].transpose(1,2,0)
-    dd['rho'] = dd['rho'].transpose(1,2,0)
-    dd['Ex']  = dd['Ex'].transpose(1,2,0)
-    dd['Ey']  = dd['Ey'].transpose(1,2,0)
-    dd['Ez']  = dd['Ez'].transpose(1,2,0)
+#if transpose_to_natural_ordering_of_xyz:
+#    dd['phi'] = dd['phi'].transpose(1,2,0)
+#    dd['rho'] = dd['rho'].transpose(1,2,0)
+#    dd['Ex']  = dd['Ex'].transpose(1,2,0)
+#    dd['Ey']  = dd['Ey'].transpose(1,2,0)
+#    dd['Ez']  = dd['Ez'].transpose(1,2,0)
 
 # Save pinch to file
-kfm.dict_to_h5(dd,pinch_name+'.h5')
+kfm.dict_to_h5(grid_dict, pinch_name+'.h5', group='grid', readwrite_opts='w')
+for i in range(dd['phi'].shape[0]):
+    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, pinch_name+'.h5', group='slices/slice%d'%i, readwrite_opts='a')
+
+kfm.dict_to_h5({'ti_method' : 'FD'}, pinch_name+'.h5', group='stats', readwrite_opts='a')
