@@ -74,13 +74,14 @@ tc_data.dz = dz
 tc_data.mirror_x = 0
 tc_data.mirror_y = 0
 tc_data.mirror_z = 0
+scale = [ 1., dx, dy, dz, dx * dy, dx * dz, dy * dz, (dx * dy) * dz];
 for ii in range(nx):
     for jj in range(ny):
         for kk in range(nz):
             for ll in range(8):
-                tc_data.table_addr[ii + nx * (jj + ny * (kk + nz * ll))] = A[
+                tc_data.table_addr[ll + 8 * (ii + nx * (jj + ny * kk))] = A[
                     ii, jj, kk, ll
-                ]
+                ] * scale[ll];
 
 tricub_data_buffer_id = job.add_stored_buffer(cbuffer=tricub_data_buffer)
 
