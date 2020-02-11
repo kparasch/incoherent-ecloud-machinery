@@ -81,10 +81,14 @@ if (NRJ<6000) {
 !Inj. optics in thin lens for IR1&5 (11 m in IR1/5)
 call,file="/afs/cern.ch/user/s/sfar/public/ATS2017/draft/opticsfile.1_INJ_thin";
 qx0 = 62.27;   qy0 = 60.295;  qprime = 20; qprimex = qprime; qprimey = qprime;
+!Beam,particle=proton,sequence=lhcb1,energy=450.0,NPART=1.25e11,
+!     sige=4.5e-4,sigt=0.130,ex=epsx,ey=epsy;
+!Beam,particle=proton,sequence=lhcb2,energy=450.0,bv = bvaux,NPART=1.25e11,
+!     sige=4.5e-4,sigt=0.130,ex=epsx,ey=epsy;
 Beam,particle=proton,sequence=lhcb1,energy=450.0,NPART=1.25e11,
-     sige=4.5e-4,sigt=0.130,ex=epsx,ey=epsy;
+     sige=3.6e-4,sigt=0.09,ex=epsx,ey=epsy;
 Beam,particle=proton,sequence=lhcb2,energy=450.0,bv = bvaux,NPART=1.25e11,
-     sige=4.5e-4,sigt=0.130,ex=epsx,ey=epsy;
+     sige=3.6e-4,sigt=0.09,ex=epsx,ey=epsy;
 };
 
 
