@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import pickle
 import pysixtrack
 
-import normalization
 
 import sys
-sys.path.append('..')
+sys.path.append('../Tools/')
+import normalization
 import kostas_filemanager as kfm
 
 inspect_closed_orbit = True
