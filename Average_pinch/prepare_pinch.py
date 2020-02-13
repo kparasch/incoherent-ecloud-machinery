@@ -10,9 +10,9 @@ sys.path.append(os.path.abspath('../'))
 sys.path.append(os.path.abspath('../PyFRIENDS'))
 import kostas_filemanager as kfm
 
-pinch_name = 'Pinch8'
-workers=15
-n_pinches_to_average = 30
+pinch_name = 'Pinch10'
+workers=22
+n_pinches_to_average = 4000
 #save_efields = True
 save_rho = True
 #transpose_to_natural_ordering_of_xyz = True
@@ -121,15 +121,18 @@ while len(results):
     for j in range(len(results)):
         if results[j].done():
             print('something is done')
-	    idd = results[j].result()
-    	    dd_temp = kfm.h5_to_dict('temp'+str(idd)+'/temp_pinch.h5')
+            idd = results[j].result()
+            dd_temp = kfm.h5_to_dict('temp'+str(idd)+'/temp_pinch.h5')
             jj += 1
             dd['phi'] += dd_temp['phi']/(1.*n_pinches_to_average)
             if save_rho:
                 dd['rho'] += dd_temp['rho']/(1.*n_pinches_to_average)
-	    os.remove('temp'+str(idd)+'/temp_pinch.h5')
-	    del dd_temp
-	    del results[j]
+            os.remove('temp'+str(idd)+'/temp_pinch.h5')
+            if int(idd) > 10:
+            	os.remove('stdout'+str(idd)+'.out')
+                shutil.rmtree('temp'+str(idd))
+            del dd_temp
+            del results[j]
             print('Finished #%d/%d pinches.'%(jj+1,n_pinches_to_average))
             break
        
