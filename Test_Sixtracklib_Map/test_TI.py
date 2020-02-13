@@ -5,11 +5,12 @@ import numpy as np
 from TricubicInterpolation import cTricubic as cTI
 
 
-#device = 'opencl:0.0'
-device = None
+device = 'opencl:0.0'
+#device = None
 n_part = 1000
 
 seed = np.random.randint(10000)
+#seed = 7489
 print('Seed is %d:'%seed)
 np.random.seed(seed)
 
@@ -74,13 +75,14 @@ tc_data.dz = dz
 tc_data.mirror_x = 0
 tc_data.mirror_y = 0
 tc_data.mirror_z = 0
+scale = [1., dx, dy, dz, dx*dy, dx*dz, dy*dz, (dx*dy)*dz]
 for ii in range(nx):
     for jj in range(ny):
         for kk in range(nz):
             for ll in range(8):
-                tc_data.table_addr[ii + nx * (jj + ny * (kk + nz * ll))] = A[
+                tc_data.table_addr[ll + 8 * (ii + nx * (jj + ny * kk ))] = A[
                     ii, jj, kk, ll
-                ]
+                ]*scale[ll]
 
 tricub_data_buffer_id = job.add_stored_buffer(cbuffer=tricub_data_buffer)
 
@@ -95,8 +97,8 @@ job.collect()
 
 flag = True
 for i_part in range(n_part):
-    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[0] - particles.px[i_part]) < 1.e-13
-    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[1] - particles.py[i_part]) < 1.e-13
+    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[0] - particles.px[i_part]) < 1.e-12
+    flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[1] - particles.py[i_part]) < 1.e-12
     if np.isnan(particles.ptau[i_part]):
         print('ptau at i_part = %d is nan'%i_part)
         if TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] < (1 - part.gamma0)/(part.gamma0*part.beta0):
@@ -105,7 +107,7 @@ for i_part in range(n_part):
             print('... and should not be.')
             flag = False
     else:
-        flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.ptau[i_part]) < 1.e-13
+        flag = flag and abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[2] - particles.ptau[i_part]) < 1.e-12
     if not flag:
         print('i_part: ',i_part)
         print(abs(TI.kick(test_x[i_part], test_y[i_part], test_z[i_part])[0] - particles.px[i_part]))
