@@ -17,7 +17,7 @@ with open(fLine, 'rb') as fid:
 monitors = 0
 for i,elname in enumerate(line.element_names):
     if elname[0:6] == 'ecloud':
-        line.elements[i] = pysixtrack.elements.BeamMonitor(num_stores=1, is_rolling=True)
+        line.elements[i] = pysixtrack.elements.BeamMonitor(num_stores=100, is_rolling=True)
         monitors += 1
 
 with open(fOptics, 'rb') as fid:
@@ -54,21 +54,26 @@ ymax = 0
 tmax = 0
 job = sixtracklib.TrackJob( elements, ps, device=None)
 first_turns = 10
-job.track_until(first_turns)
-for i in range(first_turns, n_turns):
-    job.track_until(i+1)
-    job.collect()
-    res = job.output
-    for j in range(1, monitors+1):
-        mask = res.particles[j].at_turn == i
-        xmax_t = np.max(np.abs(res.particles[j].x[mask]))
-        ymax_t = np.max(np.abs(res.particles[j].y[mask]))
-        tmax_t = np.max(np.abs(res.particles[j].zeta[mask]))
+job.track_until(n_turns)
+job.collect()
+res = job.output
+prr
+for j in range(1, monitors+1):
+    print(j)
+    parts = res.particles[j]
+    x = parts.x.reshape(n_turns,n_particles)
+    y = parts.x.reshape(n_turns,n_particles)
+    zeta = parts.zeta.reshape(n_turns,n_particles)
+    at_turn = parts.at_turn.reshape(n_turns,n_particles)
+    for i in range(first_turns, n_turns):
+        mask = at_turn[i,:] == i
+        xmax_t = np.max(np.abs(x[i,:][mask]))
+        ymax_t = np.max(np.abs(y[i,:][mask]))
+        tmax_t = np.max(np.abs(zeta[i,:][mask]))
         if xmax < xmax_t: xmax = xmax_t
         if ymax < ymax_t: ymax = ymax_t
         if tmax < tmax_t: tmax = tmax_t
-    if i%10 == 0:
-        print(f'Max( x: {xmax:.6f}, y: {ymax:.6f}, zeta: {tmax:.6f}), {np.sum(mask)} particles survived, Turn: {i}')
+        print(f'Max( x: {xmax:.6f}, y: {ymax:.6f}, zeta: {tmax:.6f}), {np.sum(mask)} particles survived, Turn: {i}, Mon: {j}')
 
 #x = res.particles[0].x.reshape(n_turns,n_particles)
 #px = res.particles[0].px.reshape(n_turns,n_particles)
