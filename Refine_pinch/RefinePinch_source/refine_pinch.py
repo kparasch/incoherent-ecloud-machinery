@@ -21,17 +21,19 @@ magnify_longitudinal_in = float(sys.argv[3])
 demagnify_transverse_out = float(sys.argv[4])
 demagnify_longitudinal_out = float(sys.argv[5])
 compression_opts = 0
-#do_kicks = True
 do_symmetric2D = int(sys.argv[6])
 debug = False
-#symmetric2D=True
 
 symm_str = ''
 if do_symmetric2D: symm_str = '_symm2D'
 
 pinch_in = sys.argv[1]
 pinches_folder = sys.argv[7]
-fname = pinches_folder + pinch_in + '.h5'
+
+#fname = pinches_folder + pinch_in + '.h5'
+fname = pinch_in + '.h5'
+shutil.copyfile(pinches_folder + pinch_in + '.h5', fname)
+
 pinch_out = 'refined_'+pinch_in+symm_str+'_MTI%.1f_MLI%.1f_DTO%.1f_DLO%.1f.h5'%(magnify_transverse_in, magnify_longitudinal_in, demagnify_transverse_out, demagnify_longitudinal_out)
 out_fname = pinches_folder+pinch_out
 out_efname = pinches_folder + 'e_' + pinch_out
