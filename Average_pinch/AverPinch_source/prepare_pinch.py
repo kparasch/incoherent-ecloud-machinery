@@ -150,7 +150,7 @@ while len(results):
                 dd['rho'] += dd_temp['rho']/(1.*n_pinches_to_average)
             os.remove('temp'+str(idd)+'/temp_pinch.h5')
             if int(idd) > 10:
-                os.remove('stdout'+str(idd)+'.out')
+#                os.remove('stdout'+str(idd)+'.out')
                 shutil.rmtree('temp'+str(idd))
             del dd_temp
             del results[j]

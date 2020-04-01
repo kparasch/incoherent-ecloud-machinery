@@ -1,16 +1,22 @@
 #!/bin/bash
 
-source /home/kparasch/workspace/ecloud_sixtracklib/miniconda3/bin/activate ""
+myhome=/afs/cern.ch/user/k/kparasch/work/public/ecloud_sixtracklib
 
-export PYTHONPATH=/home/kparasch/workspace/ecloud_sixtracklib/packages/PyFRIENDS:$PYTHONPATH
-export PYTHONPATH=/home/kparasch/workspace/ecloud_sixtracklib/incoherent-ecloud-machinery/Tools:$PYTHONPATH
+source /cvmfs/sft-nightlies.cern.ch/lcg/views/dev4cuda9/latest/x86_64-centos7-gcc62-opt/setup.sh
+unset PYTHONHOME
+unset PYTHONPATH
+source $myhome/miniconda3/bin/activate ""
+export PATH=$myhome/miniconda3/bin:$PATH
+
+export PYTHONPATH=$myhome/packages/PyFRIENDS:$PYTHONPATH
+export PYTHONPATH=$myhome/incoherent-ecloud-machinery/Tools:$PYTHONPATH
 
 which pip
 
 pinch_name=Pinch$1
-workers=2
-nPinches=3
-final_destination=/home/kparasch/workspace/ecloud_sixtracklib/incoherent-ecloud-machinery/Average_pinch
+workers=24
+nPinches=3000
+final_destination=$myhome/incoherent-ecloud-machinery/Average_pinch
 
 
 if [[ -d "$pinch_name" ]]
@@ -24,8 +30,25 @@ mkdir $pinch_name
 cp -r AverPinch_source/* Pinch$1/
 cp Simulation_parameters.py Pinch$1/
 
-cd Pinch$1
 
-python prepare_pinch.py Pinch$1 $workers $nPinches $final_destination
+echo "============== start submit file ============="
+tee temp_submit_file.sub << EOF
+executable  = AverPinch_source/aver_exec.sh
+arguments = $pinch_name $workers $nPinches $final_destination
+output = $pinch_name/$pinch_name.out
+error = $pinch_name/$pinch_name.err
+log = $pinch_name/$pinch_name.log
+transfer_input_files = $pinch_name
+RequestCpus = 24
+stream_output = True
+stream_error = True
++BigMemJob = True
++JobFlavour = "espresso"
+queue
+EOF
+echo "=============== end submit file =============="
 
-cd ..
+condor_submit temp_submit_file.sub
+rm temp_submit_file.sub
+#+JobFlavour = "nextweek"
+

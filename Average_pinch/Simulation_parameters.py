@@ -64,7 +64,7 @@ x_kick_in_sigmas = 0.1
 y_kick_in_sigmas = 0.1
 
 # Numerical Parameters
-n_slices = 400
+n_slices = 500
 z_cut = 6*sigma_z # For slicing
 macroparticles_per_slice = 50000
 n_macroparticles = macroparticles_per_slice*n_slices
@@ -117,12 +117,12 @@ target_Dh_internal_grid_sigma = 0.2
 custom_target_grid_arcs = None
 
 # # Uncomment for custom grid
-# custom_target_grid_arcs = {
-#     'x_min_target': -9.2e-3,
-#     'x_max_target': 9.2e-3,
-#     'y_min_target': -6.4e-3,
-#     'y_max_target': 6.4e-3,
-#     'Dh_target': 2.e-5}
+custom_target_grid_arcs = {
+     'x_min_target': -7.6e-3,
+     'x_max_target': 7.6e-3,
+     'y_min_target': -5.8e-3,
+     'y_max_target': 5.8e-3,
+     'Dh_target': 2.e-5}
 
 force_interp_at_substeps_interacting_slices = True
 
