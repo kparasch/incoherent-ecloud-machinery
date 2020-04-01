@@ -43,7 +43,7 @@ RequestCpus = 24
 stream_output = True
 stream_error = True
 +BigMemJob = True
-+JobFlavour = "espresso"
++MaxRunTime = 259200
 queue
 EOF
 echo "=============== end submit file =============="
