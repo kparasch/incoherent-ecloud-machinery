@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.io as sio
 
 import sys
-sys.path.append('..')
+#sys.path.append('..')
 import kostas_filemanager as kfm
 
 pinch_folder = '/home/kparasch/Storage/MyPinches/'

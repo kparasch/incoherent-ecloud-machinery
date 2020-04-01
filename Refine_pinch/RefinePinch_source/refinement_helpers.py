@@ -1,8 +1,8 @@
 import numpy as np
 
 import sys
-sys.path.append('..')
-sys.path.append('../PyFRIENDS')
+#sys.path.append('..')
+#sys.path.append('../PyFRIENDS')
 import kostas_filemanager as kfm
 from TricubicInterpolation import cTricubic as ti
 import PyPIC.PyPIC_Scatter_Gather as PyPICSC
