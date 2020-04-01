@@ -6,7 +6,7 @@ import time
 import shutil
 from collections import deque
 import sys
-sys.path.append('..')
+#sys.path.append('..')
 import kostas_filemanager as kfm
 import refinement_helpers as rh
 import volume_helpers as vh
@@ -16,21 +16,21 @@ from TricubicInterpolation import pyTricubic as pyTI
 #ob = mfm.myloadmat_to_obj('pinch_cut.mat')
 start_time = time.time()
 N_nodes_discard = 10
-magnify_transverse_in = 4.
-magnify_longitudinal_in = 2.
-demagnify_transverse_out = 2.0
-demagnify_longitudinal_out = 1.0
+magnify_transverse_in = float(sys.argv[2])
+magnify_longitudinal_in = float(sys.argv[3])
+demagnify_transverse_out = float(sys.argv[4])
+demagnify_longitudinal_out = float(sys.argv[5])
 compression_opts = 0
 #do_kicks = True
-do_symmetric2D = False
+do_symmetric2D = int(sys.argv[6])
 debug = False
 #symmetric2D=True
 
 symm_str = ''
 if do_symmetric2D: symm_str = '_symm2D'
 
-pinch_in = 'Pinch7_cut'
-pinches_folder = 'eclouds/'
+pinch_in = sys.argv[1]
+pinches_folder = sys.argv[7]
 fname = pinches_folder + pinch_in + '.h5'
 pinch_out = 'refined_'+pinch_in+symm_str+'_MTI%.1f_MLI%.1f_DTO%.1f_DLO%.1f.h5'%(magnify_transverse_in, magnify_longitudinal_in, demagnify_transverse_out, demagnify_longitudinal_out)
 out_fname = pinches_folder+pinch_out
