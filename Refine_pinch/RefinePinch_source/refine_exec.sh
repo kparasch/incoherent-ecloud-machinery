@@ -18,11 +18,11 @@ DTO=$4
 DLO=$5
 do_symm=$6
 pinch_folder=$7
-out_name=refined_$(pinch_name)_MTI$(MTI)_MLI$(MLI)_DTO$(DTO)_DLO$(DLO)_do_symm$(do_symm)
+out_name=refined_${pinch_name}_MTI${MTI}_MLI${MLI}_DTO${DTO}_DLO${DLO}_do_symm${do_symm}
 
 cd $out_name
 
-time python refine_pinch $pinch_name $MTI $MLI $DTO $DLO $do_symm $pinch_folder
+time python refine_pinch.py $pinch_name $MTI $MLI $DTO $DLO $do_symm $pinch_folder
 
 cd ..
 
