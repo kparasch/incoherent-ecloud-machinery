@@ -1,26 +1,47 @@
 import sys
 import shutil
-import contextlib2 as contextlib #pip install contextlib2 in python2 or use contextlib in python3.4>
+#import contextlib2 as contextlib #pip install contextlib2 in python2 or use contextlib in python3.4>
+import contextlib
 import os
 import numpy as np
 import time
 import concurrent.futures
 
-sys.path.append(os.path.abspath('../'))
-sys.path.append(os.path.abspath('../PyFRIENDS'))
+#sys.path.append(os.path.abspath('../Tools'))
+#sys.path.append(os.path.abspath('../../packages/PyFRIENDS'))
 import kostas_filemanager as kfm
+import PyPARIS_sim_class.Simulation as sim_mod
+import Simulation_parameters as pp
 
-pinch_name = 'Pinch10'
-workers=22
-n_pinches_to_average = 4000
+pinch_name = sys.argv[1]
+workers = int(sys.argv[2])
+n_pinches_to_average = int(sys.argv[3])
+out_dir = sys.argv[4]
+#workers=2
+#n_pinches_to_average = 4
+#n_pinches_to_average = 4000
 #save_efields = True
 save_rho = True
 #transpose_to_natural_ordering_of_xyz = True
 
-shutil.copytree('AP_source', pinch_name)
-sys.path.append(os.path.abspath(pinch_name))
-os.chdir(pinch_name)
-import PyPARIS_sim_class.Simulation as sim_mod
+pp_dict = {}
+for attr in dir(pp):
+    if attr[0] != '_':
+        temp = getattr(pp, attr)
+        if temp is None:
+            temp = 'None'
+        pp_dict[attr] = temp
+pp_dict['pinch_name'] = pinch_name
+pp_dict['max_workers'] = workers
+pp_dict['n_pinches_to_average'] = n_pinches_to_average
+pp_dict['out_dir'] = out_dir
+
+#os.mkdir(pinch_name)
+#shutil.copyfile('AP_source/Simulation_parameters.py', pinch_name+'/Simulation_parameters.py')
+#shutil.copytree('AP_source/Simulation_parameters.py', pinch_name+'/')
+#sys.path.append(os.path.abspath(pinch_name))
+#os.chdir(pinch_name)
+#import Simulation_parameters as pp
 
 executor = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
 
@@ -129,7 +150,7 @@ while len(results):
                 dd['rho'] += dd_temp['rho']/(1.*n_pinches_to_average)
             os.remove('temp'+str(idd)+'/temp_pinch.h5')
             if int(idd) > 10:
-            	os.remove('stdout'+str(idd)+'.out')
+                os.remove('stdout'+str(idd)+'.out')
                 shutil.rmtree('temp'+str(idd))
             del dd_temp
             del results[j]
@@ -161,8 +182,19 @@ while len(results):
 #    dd['Ez']  = dd['Ez'].transpose(1,2,0)
 
 # Save pinch to file
-kfm.dict_to_h5(grid_dict, pinch_name+'.h5', group='grid', readwrite_opts='w')
-for i in range(dd['phi'].shape[0]):
-    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, pinch_name+'.h5', group='slices/slice%d'%i, readwrite_opts='a')
 
-kfm.dict_to_h5({'ti_method' : 'FD'}, pinch_name+'.h5', group='stats', readwrite_opts='a')
+final_destination = out_dir+'/'+pinch_name+'.h5'
+
+kfm.dict_to_h5(grid_dict, final_destination, group='grid', readwrite_opts='w')
+for i in range(dd['phi'].shape[0]):
+    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, final_destination, group='slices/slice%d'%i, readwrite_opts='a')
+
+kfm.dict_to_h5({'ti_method' : 'FD'}, final_destination, group='stats', readwrite_opts='a')
+kfm.dict_to_h5(pp_dict, final_destination, group='Simulation_parameters', readwrite_opts='a')
+print(f"max x : {grid_dict['xg'][-1]/grid_dict['sigma_x']}sigmas")
+print(f"max y : {grid_dict['yg'][-1]/grid_dict['sigma_y']}sigmas")
+print(f"max z : {grid_dict['zg'][-1]/grid_dict['sigma_z']}sigmas")
+print(f"Sigma_x: {grid_dict['sigma_x']}")
+print(f"Sigma_y: {grid_dict['sigma_y']}")
+print(f"Sigma_z: {grid_dict['sigma_z']}")
+print(f"Pinch can be found in {final_destination}")
