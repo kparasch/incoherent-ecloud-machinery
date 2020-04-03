@@ -45,21 +45,23 @@ def symmetrize(A):
 
 def setup_pic(fname, magnify=2., N_nodes_discard=10, symmetric_slice_2D=True):
 
-    ob = kfm.h5_to_obj(fname)
-    Dh_magnify = (ob.xg[1]-ob.xg[0])/magnify
-    x_magnify = -ob.xg[N_nodes_discard]
-    y_magnify = -ob.yg[N_nodes_discard]
+    grid = kfm.h5_to_dict(fname, group='grid')
+    ob0 = kfm.h5_to_obj(fname, group='slices/slice0')
+    Dh_magnify = (grid.xg[1]-grid.xg[0])/magnify
+    x_magnify = -grid.xg[N_nodes_discard]
+    y_magnify = -grid.yg[N_nodes_discard]
     
     if symmetric_slice_2D:
-    	pic_rho = symmetrize(ob.rho[:,:,0])
-    	pic_phi = symmetrize(ob.phi[:,:,0])
+    	pic_rho = symmetrize(ob0.rho)
+    	pic_phi = symmetrize(ob0.phi)
     else:
-    	pic_rho = ob.rho[:,:,0].copy()
-    	pic_phi = ob.phi[:,:,0].copy()
-    xg_out = ob.xg.copy()
-    yg_out = ob.yg.copy()
-    zg_out = ob.zg.copy()
-    del ob
+    	pic_rho = ob0.rho.copy()
+    	pic_phi = ob0.phi.copy()
+    xg_out = grid.xg.copy()
+    yg_out = grid.yg.copy()
+    zg_out = grid.zg.copy()
+    del grid
+    del ob0
 
     chamb = PyPICpoly.polyg_cham_geom_object({'Vx':np.array([xg_out[-1], xg_out[0], xg_out[0], xg_out[-1]]),
                                        'Vy':np.array([yg_out[-1], yg_out[-1], yg_out[0], yg_out[0]]),
@@ -89,38 +91,42 @@ def setup_pic(fname, magnify=2., N_nodes_discard=10, symmetric_slice_2D=True):
 
 def get_slice(picoutside, picinside, fname, zslice, symmetric_slice_2D=True):
     
-    ob = kfm.h5_to_obj(fname)
+    grid = kfm.h5_to_obj(fname, group='grid')
 
-    dz = ob.zg[1] - ob.zg[0]
-    iz_f = (zslice-ob.zg[0])/dz
+    dz = grid.zg[1] - grid.zg[0]
+    iz_f = (zslice-grid.zg[0])/dz
 
     i_left = int(np.floor(iz_f))
     i_right = i_left + 1
 
-    if zslice == ob.zg[-1]:
+    if zslice == grid.zg[-1]:
+        ilast = len(grid.zg)-1
+        oblast = kfm.h5_to_dict(fname, group=f'slices/slice{ilast}')
         if symmetric_slice_2D:
-            phi = symmetrize(ob.phi[:,:,-1])
-            rho = symmetrize(ob.rho[:,:,-1])
+            phi = symmetrize(oblast.phi)
+            rho = symmetrize(oblast.rho)
         else:
-            phi = ob.phi[:,:,-1].copy()
-            rho = ob.rho[:,:,-1].copy()
+            phi = oblast.phi.copy()
+            rho = oblast.rho.copy()
+        del oblast
     else:
+        obleft = kfm.h5_to_dict(fname, group=f'slices/slice{i_left}')
+        obright = kfm.h5_to_dict(fname, group=f'slices/slice{i_right}')
         if symmetric_slice_2D:
-            rho0 = symmetrize(ob.rho[:, :, i_left])
-            phi0 = symmetrize(ob.phi[:, :, i_left])
-            rho1 = symmetrize(ob.rho[:, :, i_right])
-            phi1 = symmetrize(ob.phi[:, :, i_right])
+            rho0 = symmetrize(obleft.rho)
+            phi0 = symmetrize(obleft.phi)
+            rho1 = symmetrize(obright.rho)
+            phi1 = symmetrize(obright.phi)
         else:
-            rho0 = ob.rho[:, :, i_left].copy()
-            phi0 = ob.phi[:, :, i_left].copy()
-            rho1 = ob.rho[:, :, i_right].copy()
-            phi1 = ob.phi[:, :, i_right].copy()
-        z0 = ob.zg[i_left]
+            rho0 = obleft.rho.copy()
+            phi0 = obleft.phi.copy()
+            rho1 = obright.rho.copy()
+            phi1 = obright.phi.copy()
+        z0 = grid.zg[i_left]
         phi = phi0 + (phi1 - phi0)*((zslice-z0)/dz)
         rho = rho0 + (rho1 - rho0)*((zslice-z0)/dz)
         del phi1, phi0, rho1, rho0
-
-    del ob
+        del obleft, obright
 
     picoutside.phi = phi
     picoutside.rho = rho
