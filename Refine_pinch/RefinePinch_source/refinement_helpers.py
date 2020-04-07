@@ -45,7 +45,7 @@ def symmetrize(A):
 
 def setup_pic(fname, magnify=2., N_nodes_discard=10, symmetric_slice_2D=True):
 
-    grid = kfm.h5_to_dict(fname, group='grid')
+    grid = kfm.h5_to_obj(fname, group='grid')
     ob0 = kfm.h5_to_obj(fname, group='slices/slice0')
     Dh_magnify = (grid.xg[1]-grid.xg[0])/magnify
     x_magnify = -grid.xg[N_nodes_discard]
@@ -101,7 +101,7 @@ def get_slice(picoutside, picinside, fname, zslice, symmetric_slice_2D=True):
 
     if zslice == grid.zg[-1]:
         ilast = len(grid.zg)-1
-        oblast = kfm.h5_to_dict(fname, group=f'slices/slice{ilast}')
+        oblast = kfm.h5_to_obj(fname, group=f'slices/slice{ilast}')
         if symmetric_slice_2D:
             phi = symmetrize(oblast.phi)
             rho = symmetrize(oblast.rho)
@@ -110,8 +110,8 @@ def get_slice(picoutside, picinside, fname, zslice, symmetric_slice_2D=True):
             rho = oblast.rho.copy()
         del oblast
     else:
-        obleft = kfm.h5_to_dict(fname, group=f'slices/slice{i_left}')
-        obright = kfm.h5_to_dict(fname, group=f'slices/slice{i_right}')
+        obleft = kfm.h5_to_obj(fname, group=f'slices/slice{i_left}')
+        obright = kfm.h5_to_obj(fname, group=f'slices/slice{i_right}')
         if symmetric_slice_2D:
             rho0 = symmetrize(obleft.rho)
             phi0 = symmetrize(obleft.phi)

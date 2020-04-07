@@ -16,7 +16,8 @@ which pip
 pinch_name=Pinch$1
 workers=24
 nPinches=3000
-final_destination=$myhome/incoherent-ecloud-machinery/Average_pinch
+final_destination=/eos/user/k/kparasch/Pinches
+#$myhome/incoherent-ecloud-machinery/Average_pinch
 
 
 if [[ -d "$pinch_name" ]]

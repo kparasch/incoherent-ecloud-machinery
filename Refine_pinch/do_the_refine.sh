@@ -16,11 +16,11 @@ which pip
 pinch_folder=/eos/user/k/kparasch/Pinches/
 pinch_name=Pinch$1
 
-MTI=1.0
-MLI=1.0
+MTI=2.0
+MLI=2.0
 DTO=1.0
 DLO=1.0
-do_symm=0
+do_symm=1
 
 out_name=refined_${pinch_name}_MTI${MTI}_MLI${MLI}_DTO${DTO}_DLO${DLO}_do_symm${do_symm}
 

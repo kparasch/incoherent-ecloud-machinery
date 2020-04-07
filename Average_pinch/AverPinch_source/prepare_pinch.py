@@ -5,7 +5,7 @@ import contextlib
 import os
 import numpy as np
 import time
-import concurrent.futures
+import multiprocessing
 
 #sys.path.append(os.path.abspath('../Tools'))
 #sys.path.append(os.path.abspath('../../packages/PyFRIENDS'))
@@ -36,19 +36,8 @@ pp_dict['max_workers'] = workers
 pp_dict['n_pinches_to_average'] = n_pinches_to_average
 pp_dict['out_dir'] = out_dir
 
-#os.mkdir(pinch_name)
-#shutil.copyfile('AP_source/Simulation_parameters.py', pinch_name+'/Simulation_parameters.py')
-#shutil.copytree('AP_source/Simulation_parameters.py', pinch_name+'/')
-#sys.path.append(os.path.abspath(pinch_name))
-#os.chdir(pinch_name)
-#import Simulation_parameters as pp
 
-executor = concurrent.futures.ProcessPoolExecutor(max_workers=workers)
-
-
-
-
-def one_pinch(save_sigmas=False, save_coords=False,idd=0):
+def one_pinch(mydict, lock, N_pinches=1, save_sigmas_and_coords=False, idd=0, grid=None):
     os.mkdir('temp'+str(idd))
     shutil.copytree('pyecloud_config', 'temp'+str(idd)+'/pyecloud_config')
     shutil.copyfile('Simulation_parameters.py', 'temp'+str(idd)+'/Simulation_parameters.py')
@@ -98,122 +87,61 @@ def one_pinch(save_sigmas=False, save_coords=False,idd=0):
             break
         else:
             time.sleep(60)
+   
+    if save_sigmas_and_coords:
+        grid['sigma_x_beam'] = ring.sim_content.bunch.sigma_x()
+        grid['sigma_y_beam'] = ring.sim_content.bunch.sigma_y()
+        grid['sigma_z_beam'] = ring.sim_content.bunch.sigma_z()
+        grid['xg'] = first_ecloud.spacech_ele.xg
+        grid['yg'] = first_ecloud.spacech_ele.yg
+        grid['zg'] = z_centers
 
-    dd = {}   
-    if save_sigmas:
-        dd['sigma_x_beam'] = ring.sim_content.bunch.sigma_x()
-        dd['sigma_y_beam'] = ring.sim_content.bunch.sigma_y()
-        dd['sigma_z_beam'] = ring.sim_content.bunch.sigma_z()
-    if save_coords:
-        dd['xg'] = first_ecloud.spacech_ele.xg
-        dd['yg'] = first_ecloud.spacech_ele.yg
-        dd['zg'] = z_centers
+    first_ecloud.phi_ele_last_track /= (1.*N_pinches)
+    first_ecloud.rho_ele_last_track /= (1.*N_pinches)
+    lock.acquire()
+    if 'phi' in mydict.keys():
+        mydict['phi'] += first_ecloud.phi_ele_last_track
+        mydict['rho'] += first_ecloud.rho_ele_last_track
+    else:
+        mydict['phi'] = first_ecloud.phi_ele_last_track
+        mydict['rho'] = first_ecloud.rho_ele_last_track
+    lock.release()
 
-    if save_sigmas or save_coords:
-        kfm.dict_to_h5(dd, 'temp_pinch.h5', group='grid', readwrite_opts='w')
-
-    dd['phi'] = first_ecloud.phi_ele_last_track
-    dd['rho'] = first_ecloud.rho_ele_last_track
-    for i in range(dd['phi'].shape[0]):
-        kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, 'temp_pinch.h5', group='slices/slice%d'%i, readwrite_opts='a')
-    #kfm.dict_to_h5(dd,'temp_pinch.h5')
     os.chdir('..')
-    #os.rmdir('temp'+str(idd))
   
     return idd
 
-def kern(i):
+def kern(i, mydict, lock):
+    print(f'Running: {i+1}')
     with open('stdout'+str(i)+'.out','w') as f:
         with contextlib.redirect_stdout(f):
-            return one_pinch(save_sigmas=False, save_coords=False,idd=i+1)
+            return one_pinch(mydict, lock, save_sigmas_and_coords=False, idd=i+1, grid=None)
 
-i0 = one_pinch(save_sigmas=True, save_coords=True)
-grid_dict = kfm.h5_to_dict('temp'+str(i0)+'/temp_pinch.h5', group='grid')
-shapes = [len(grid_dict['zg']), len(grid_dict['xg']), len(grid_dict['yg'])]
-dd = {}
-dd['phi'] = np.empty(shapes)
-dd['rho'] = np.empty(shapes)
-#dd = kfm.h5_to_dict('temp'+str(i0)+'/temp_pinch.h5',)
-dd_temp = kfm.h5_to_dict('temp'+str(i0)+'/temp_pinch.h5', group='slices/slice%d'%i0)
-os.remove('temp'+str(i0)+'/temp_pinch.h5')
+manager = multiprocessing.Manager()
+result_dict = manager.dict()
+grid_dict = manager.dict()
+lock = manager.Lock()
 
-#grid_dict = { 'xg' : dd['xg'],
-#              'yg' : dd['yg'],
-#              'zg' : dd['zg'],
-#              'sigma_x' : dd['sigma_x_beam'], 
-#              'sigma_y' : dd['sigma_y_beam'], 
-#              'sigma_z' : dd['sigma_z_beam']
-#            }
+i0 = one_pinch(result_dict, lock, save_sigmas_and_coords=True, grid=grid_dict)
 
-dd['phi'][i0,:,:] = dd_temp['phi']/(1.*n_pinches_to_average)
-dd['rho'][i0,:,:] = dd_temp['rho']/(1.*n_pinches_to_average)
-del dd_temp
+with multiprocessing.Pool(workers) as pool:
+    result_list = pool.starmap_async(kern, [(ii, result_dict, lock) for ii in range(n_pinches_to_average-1)])
+    print(result_list.get())
 
-results=[]
-for i in range(n_pinches_to_average-1):
-    results.append(executor.submit(kern,i))
-
-jj = 0
-times_list = []
-while len(results):
-    for j in range(len(results)):
-        if results[j].done():
-            tstart = time.time()
-            print('something is done')
-            idd = results[j].result()
-            #dd_temp = kfm.h5_to_dict('temp'+str(idd)+'/temp_pinch.h5')
-            jj += 1
-            for kk in range(dd['phi'].shape[0]):
-                dd_temp = kfm.h5_to_dict('temp'+str(idd)+'/temp_pinch.h5', group='slices/slice%d'%kk)
-                dd['phi'][kk,:,:] += dd_temp['phi']/(1.*n_pinches_to_average)
-                dd['rho'][kk,:,:] += dd_temp['rho']/(1.*n_pinches_to_average)
-            os.remove('temp'+str(idd)+'/temp_pinch.h5')
-            if int(idd) > 10:
-#                os.remove('stdout'+str(idd)+'.out')
-                shutil.rmtree('temp'+str(idd))
-            del dd_temp
-            del results[j]
-            tend = time.time()
-            tinterval = tend-tstart
-            times_list.append(tinterval)
-            print('Finished #%d/%d pinches.'%(jj+1,n_pinches_to_average))
-            print(f'Time to read: {tinterval}, mean: {np.mean(times_list)}, std: {np.std(times_list)}')
-            break
-       
-#for i in range(n_pinches_to_average-1):
-#    print('Finished #%d/%d pinches.'%(i,n_pinches_to_average))
-#    #print('Running pinch #%d/%d.'%(i,n_pinches_to_average))
-#    dd_temp = one_pinch(save_rho=save_rho, save_sigmas=False, save_coords=False)
-
-#if save_efields:
-#    dx = dd['xg'][1] - dd['xg'][0]
-#    dy = dd['yg'][1] - dd['yg'][0]
-#    dz = dd['zg'][1] - dd['zg'][0]
-#    dd['Ex'] = np.zeros_like(dd['phi'])
-#    dd['Ey'] = np.zeros_like(dd['phi'])
-#    dd['Ez'] = np.zeros_like(dd['phi'])
-#    
-#    dd['Ex'][:,1:-1,:] = -0.5/dx*( dd['phi'][:,2:,:] - dd['phi'][:,0:-2,:])
-#    dd['Ey'][:,:,1:-1] = -0.5/dy*( dd['phi'][:,:,2:] - dd['phi'][:,:,0:-2])
-#    dd['Ez'][1:-1,:,:] = -0.5/dz*( dd['phi'][2:,::] - dd['phi'][0:-2,:,:])
-
-#if transpose_to_natural_ordering_of_xyz:
-#    dd['phi'] = dd['phi'].transpose(1,2,0)
-#    dd['rho'] = dd['rho'].transpose(1,2,0)
-#    dd['Ex']  = dd['Ex'].transpose(1,2,0)
-#    dd['Ey']  = dd['Ey'].transpose(1,2,0)
-#    dd['Ez']  = dd['Ez'].transpose(1,2,0)
 
 # Save pinch to file
 
+out_pinch = pinch_name + '.h5'
+
+kfm.dict_to_h5(grid_dict, out_pinch, group='grid', readwrite_opts='w')
+for i in range(result_dict['phi'].shape[0]):
+    kfm.dict_to_h5({'phi' : result_dict['phi'][i,:,:], 'rho' : result_dict['rho'][i,:,:]}, out_pinch, group='slices/slice%d'%i, readwrite_opts='a')
+
+kfm.dict_to_h5({'ti_method' : 'FD'}, out_pinch, group='stats', readwrite_opts='a')
+kfm.dict_to_h5({'sim' : str(pp_dict)}, out_pinch, group='Simulation_parameters', readwrite_opts='a')
+
 final_destination = out_dir+'/'+pinch_name+'.h5'
-
-kfm.dict_to_h5(grid_dict, final_destination, group='grid', readwrite_opts='w')
-for i in range(dd['phi'].shape[0]):
-    kfm.dict_to_h5({'phi' : dd['phi'][i,:,:], 'rho' : dd['rho'][i,:,:]}, final_destination, group='slices/slice%d'%i, readwrite_opts='a')
-
-kfm.dict_to_h5({'ti_method' : 'FD'}, final_destination, group='stats', readwrite_opts='a')
-kfm.dict_to_h5({'sim' : str(pp_dict)}, final_destination, group='Simulation_parameters', readwrite_opts='a')
+shutil.copyfile(out_pinch, final_destination)
 print(f"max x : {grid_dict['xg'][-1]/grid_dict['sigma_x']}sigmas")
 print(f"max y : {grid_dict['yg'][-1]/grid_dict['sigma_y']}sigmas")
 print(f"max z : {grid_dict['zg'][-1]/grid_dict['sigma_z']}sigmas")
