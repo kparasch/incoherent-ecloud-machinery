@@ -1,43 +1,50 @@
 from scipy.constants import c
+from scipy.constants import m_p
+from scipy.constants import e as qe
 
 ####################
 # Machine Settings #
 ####################
 
-machine_configuration = 'LHC-collision'
+machine_class = 'Synchrotron'
 
-# # Use this part for optics from file
-# # n_segments needs to be None if optics_pickle_file is specified
-# optics_pickle_file = 'lhc2018_25cm_only_triplets_IR15_b1_optics.pkl'
-# n_segments = None
-# beta_x =  None
-# beta_y =  None
-# Q_x = None
-# Q_y = None
-
-# # Use this part for smooth machine
-optics_pickle_file = None
-n_segments = 1
-beta_x =  200.0
-beta_y =  200.0
-Q_x = 62.27
-Q_y = 60.295
-
+optics_mode = 'smooth'
+charge = qe
+mass = m_p
+p0 = 450e9 * qe / c
+circumference = 26658.8832
+n_segments = 16
+name = None
+s = None
+alpha_x = -1.44
+beta_x = 80.51
+D_x = 1.52
+alpha_y = 1.44
+beta_y = 80.79
+D_y = 0.
+accQ_x = 62.27
+accQ_y = 60.295
 Qp_x = 0.
 Qp_y = 0.
-
-octupole_knob = 0.
-
-V_RF = 12e6
-
-n_non_parallelizable = 2 #rf and aperture
+app_x = 0.
+app_y = 0.
+app_xy = 0.
+longitudinal_mode = 'non-linear'
+Q_s = None
+alpha_mom_compaction = 3.483e-04
+#alpha_mom_compaction = 3.225e-04
+h_RF = 35640
+V_RF = 8e6
+dphi_RF = 0.
+p_increment = 0.
+RF_at = 'end_of_transverse'
+wrap_z = False
+other_detuners = []
 
 # Transverse Damper Settings
 enable_transverse_damper = False
 dampingrate_x = 100.
 dampingrate_y = 100.
-if enable_transverse_damper: n_non_parallelizable += 1
-
 
 ###################
 # Beam Parameters #
@@ -47,17 +54,18 @@ bunch_from_file = None
 
 intensity = 1.2e+11
 
-epsn_x = 2.5e-6
-epsn_y = 2.5e-6
+epsn_x = 1.7e-6
+epsn_y = 1.7e-6
 
-sigma_z = 1.2e-9/4*c
+sigma_z = 0.08244
+#sigma_z = 9.181144e-02
 
 x_kick_in_sigmas = 0.1
 y_kick_in_sigmas = 0.1
 
 # Numerical Parameters
 n_slices = 500
-z_cut = 2.5e-9/2*c # For slicing
+z_cut = 6*sigma_z # For slicing
 macroparticles_per_slice = 50000
 n_macroparticles = macroparticles_per_slice*n_slices
 
@@ -68,7 +76,7 @@ n_macroparticles = macroparticles_per_slice*n_slices
 
 # 1. Turns
 N_turns = 128 # Per job
-N_turns_target = 128
+N_turns_target = 20000
 # 2. Losses
 sim_stop_frac = 0.9
 # 3. Emittance Growth
@@ -95,32 +103,32 @@ chamb_type = 'polyg'
 x_aper = 2.300000e-02
 y_aper = 1.800000e-02
 filename_chm = 'LHC_chm_ver.mat'
-Dt_ref = 5e-12
+Dt_ref = 5.000000e-12
 pyecl_input_folder = './pyecloud_config'
-sey = 1.30
 
 # Transverse Multigrid Parameters
 PyPICmode = 'ShortleyWeller_WithTelescopicGrids'
-N_min_Dh_main = -1.0
-Dh_sc_ext = 0.000400
+N_min_Dh_main = -1
+Dh_sc_ext = .4e-3
 f_telescope = 0.3
-N_nodes_discard = 8.0
-target_size_internal_grid_sigma = 10.0
-target_Dh_internal_grid_sigma = -2.0
+N_nodes_discard = 8.
+target_size_internal_grid_sigma = 10.
+target_Dh_internal_grid_sigma = 0.2
 custom_target_grid_arcs = None
 
-# Uncomment for custom grid
+# # Uncomment for custom grid
 custom_target_grid_arcs = {
-    'x_min_target': -5.4e-3,
-    'x_max_target': 5.4e-3,
-    'y_min_target': -5.4e-3,
-    'y_max_target': 5.4e-3,
-    'Dh_target': 2.0e-5}
-#    'Dh_target': 2.6e-5}
+     'x_min_target': -7.6e-3,
+     'x_max_target': 7.6e-3,
+     'y_min_target': -5.8e-3,
+     'y_max_target': 5.8e-3,
+     'Dh_target': 2.e-5}
+
+force_interp_at_substeps_interacting_slices = True
 
 # Enable Kicks Different Planes
 enable_kick_x = False
-enable_kick_y = False 
+enable_kick_y = False
 
 # Dedicated Dipole E-Cloud Settings
 enable_arc_dip = True
@@ -129,15 +137,17 @@ init_unif_edens_flag_dip = 1
 init_unif_edens_dip = 1.000000e+12
 N_MP_ele_init_dip = 500000
 N_mp_max_dip = N_MP_ele_init_dip*4
-B_multip_dip = [8.33] #T
+B_multip_dip = [0.0] #T
 
 # Dedicated Quadrupole E-Cloud Settings
 enable_arc_quad = False
-fraction_device_quad = 26.000000e-02 #7.000000e-02
-N_mp_max_quad = 2000000 
-B_multip_quad = [0., 188.2] #T
+fraction_device_quad = 7.000000e-02
+N_mp_ele_quad = 500000
+N_mp_max_quad = 2000000
+B_multip_quad = [0., 12.1] #T
 folder_path = '../../LHC_ecloud_distrib_quads/'
-filename_state = 'combined_distribution_sey%.2f_%.1fe11ppb_7tev.mat'%(sey,intensity/1e11)
+sey_load_quad = 1.3
+filename_state = 'combined_distribution_sey_%.2f_sigmat_%.3fns_450Gev_N_mp_%d_symm'%(sey_load_quad, sigma_z/c*1e9,N_mp_ele_quad)
 filename_init_MP_state_quad = folder_path + filename_state
 
 # Dedicated Kick Element Settings

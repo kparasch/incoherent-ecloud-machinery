@@ -6,7 +6,7 @@ import time
 import shutil
 from collections import deque
 import sys
-sys.path.append('..')
+#sys.path.append('..')
 import kostas_filemanager as kfm
 import refinement_helpers as rh
 import volume_helpers as vh
@@ -16,25 +16,27 @@ from TricubicInterpolation import pyTricubic as pyTI
 #ob = mfm.myloadmat_to_obj('pinch_cut.mat')
 start_time = time.time()
 N_nodes_discard = 10
-magnify_transverse_in = 4.
-magnify_longitudinal_in = 2.
-demagnify_transverse_out = 2.0
-demagnify_longitudinal_out = 1.0
+magnify_transverse_in = float(sys.argv[2])
+magnify_longitudinal_in = float(sys.argv[3])
+demagnify_transverse_out = float(sys.argv[4])
+demagnify_longitudinal_out = float(sys.argv[5])
 compression_opts = 0
-#do_kicks = True
-do_symmetric2D = False
+do_symmetric2D = int(sys.argv[6])
 debug = False
-#symmetric2D=True
 
 symm_str = ''
 if do_symmetric2D: symm_str = '_symm2D'
 
-pinch_in = 'Pinch7_cut'
-pinches_folder = 'eclouds/'
-fname = pinches_folder + pinch_in + '.h5'
+pinch_in = sys.argv[1]
+pinches_folder = sys.argv[7]
+
+#fname = pinches_folder + pinch_in + '.h5'
+fname = pinch_in + '.h5'
+shutil.copyfile(pinches_folder + pinch_in + '.h5', fname)
+
 pinch_out = 'refined_'+pinch_in+symm_str+'_MTI%.1f_MLI%.1f_DTO%.1f_DLO%.1f.h5'%(magnify_transverse_in, magnify_longitudinal_in, demagnify_transverse_out, demagnify_longitudinal_out)
-out_fname = pinches_folder+pinch_out
-out_efname = pinches_folder + 'e_' + pinch_out
+out_fname = pinch_out
+out_efname = 'e_' + pinch_out
 
 print('Pinch in: ' + pinch_in)
 print('Magnify = %f'%magnify_transverse_in)
@@ -44,10 +46,10 @@ pic_out, pic_in, zg = rh.setup_pic(fname, magnify=magnify_transverse_in, N_nodes
 
 dz_original = zg[1]-zg[0]
 dz_inside = dz_original/magnify_longitudinal_in
-zg_inside = np.linspace(zg[0],zg[-1],(zg[-1]-zg[0])/dz_inside+1)
+zg_inside = np.linspace(zg[0],zg[-1],int((zg[-1]-zg[0])/dz_inside)+1)
 
 dz_new = dz_original*demagnify_longitudinal_out
-zg_new = np.linspace(zg[3],zg[-4],(zg[-4]-zg[3])/dz_new+1) # skip three first and three last slices
+zg_new = np.linspace(zg[3],zg[-4],int((zg[-4]-zg[3])/dz_new)+1) # skip three first and three last slices
 #dz_new = demagnify_longitudinal_out*dz_original
 
 
@@ -257,4 +259,7 @@ kfm.dict_to_h5(stats_dict, out_efname, compression_opts=compression_opts, group=
 
 end_time = time.time()
 print('Running time: %f mins'%((end_time-start_time)/60.))
+
+shutil.copyfile(out_fname, pinches_folder+out_fname)
+shutil.copyfile(out_efname, pinches_folder+out_efname)
 
