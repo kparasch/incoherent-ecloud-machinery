@@ -3,6 +3,37 @@ import sixtracklib
 import numpy as np
 from scipy.constants import c
 
+def get_fma_distribution(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics, seed=0):
+    W = optics['W']
+    invW = optics['invW']
+    gamma0 = optics['gamma0']
+    beta0 = optics['beta0']
+
+    e1 = epsn_1/(beta0*gamma0)
+    e2 = epsn_2/(beta0*gamma0)
+
+    init_denormalized_6D = np.empty([n_particles, 6])
+    init_denormalized_6D[:,0] = 0.
+    init_denormalized_6D[:,1] = 0.
+    init_denormalized_6D[:,2] = 0.
+    init_denormalized_6D[:,3] = 0.
+    init_denormalized_6D[:,4] = 0.
+    init_denormalized_6D[:,5] = ptau_max
+    init_normalized_6D_temp = np.tensordot(invW, init_denormalized_6D, [1,1]).T
+    init_normalized_coordinates_sigma = random_full_hypersphere(n_sigma, n_particles, dim=2, seed=seed)
+
+    init_normalized_6D = np.empty([n_particles, 6])
+    init_normalized_6D[:,0] = init_normalized_coordinates_sigma[:,0] * np.sqrt(e1)
+    init_normalized_6D[:,1] = 0.
+    init_normalized_6D[:,2] = init_normalized_coordinates_sigma[:,1] * np.sqrt(e2)
+    init_normalized_6D[:,3] = 0.
+    init_normalized_6D[:,4] = 0.
+    init_normalized_6D[:,5] = init_normalized_6D_temp[:,5]
+
+    init_denormalized_coordinates = np.tensordot(W, init_normalized_6D, [1,1]).T
+
+    return init_denormalized_coordinates
+
 
 def get6D_with_fixed_J3(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics, seed=0):
 
@@ -75,6 +106,23 @@ def apply_closed_orbit(init_denormalized_coordinates, partCO):
     init_denormalized_coordinates[:,5] += part.ptau
 
     return init_denormalized_coordinates
+
+def J1_J2_from_physical(denormalized_coordinates, invW, partCO):
+    part = pysixtrack.Particles(**partCO)
+    coords = denormalized_coordinates.copy()
+    coords[:,0] -= part.x
+    coords[:,1] -= part.px
+    coords[:,2] -= part.y
+    coords[:,3] -= part.py
+    coords[:,4] -= part.zeta
+    coords[:,5] -= part.delta
+   
+    normalized_coords = np.tensordot(invW, coords, [1,1]).T
+    J1 = 0.5*(normalized_coords[:,0]**2 + normalized_coords[:,1]**2)
+    J2 = 0.5*(normalized_coords[:,2]**2 + normalized_coords[:,3]**2)
+    
+    return J1, J2
+    
 
 def get_sixtracklib_particle_set(init_denormalized_coordinates, p0c_eV):
     n_part = init_denormalized_coordinates.shape[0]

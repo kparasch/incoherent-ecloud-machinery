@@ -4,7 +4,7 @@ import numpy as np
 from cpymad.madx import Madx
 import matplotlib.pyplot as plt
 
-plt.style.use('kostas')
+#plt.style.use('kostas')
 plt.close('all')
 
 mad = Madx()
