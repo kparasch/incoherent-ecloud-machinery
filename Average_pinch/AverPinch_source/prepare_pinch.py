@@ -115,14 +115,14 @@ def kern(i, mydict, lock):
     print(f'Running: {i+1}')
     with open('stdout'+str(i)+'.out','w') as f:
         with contextlib.redirect_stdout(f):
-            return one_pinch(mydict, lock, save_sigmas_and_coords=False, idd=i+1, grid=None)
+            return one_pinch(mydict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=False, idd=i+1, grid=None)
 
 manager = multiprocessing.Manager()
 result_dict = manager.dict()
 grid_dict = manager.dict()
 lock = manager.Lock()
 
-i0 = one_pinch(result_dict, lock, save_sigmas_and_coords=True, grid=grid_dict)
+i0 = one_pinch(result_dict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=True, grid=grid_dict)
 
 with multiprocessing.Pool(workers) as pool:
     result_list = pool.starmap_async(kern, [(ii, result_dict, lock) for ii in range(n_pinches_to_average-1)])

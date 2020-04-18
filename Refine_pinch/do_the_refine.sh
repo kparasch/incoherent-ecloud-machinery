@@ -14,13 +14,47 @@ export PYTHONPATH=$myhome/incoherent-ecloud-machinery/Tools:$PYTHONPATH
 which pip
 
 pinch_folder=/eos/user/k/kparasch/Pinches/
-pinch_name=Pinch$1
 
-MTI=2.0
-MLI=2.0
+MTI=1.0
+MLI=1.0
 DTO=1.0
 DLO=1.0
-do_symm=1
+do_symm=0
+
+#### Argument Parser ####
+for i in "$@"
+do
+case $i in
+    --pinch_name=*)
+    pinch_name="${i#*=}"
+    shift
+    ;;
+    --MTI=*)
+    MTI="${i#*=}"
+    shift
+    ;;
+    --MLI=*)
+    MLI="${i#*=}"
+    shift
+    ;;
+    --DTO=*)
+    DTO="${i#*=}"
+    shift
+    ;;
+    --DLO=*)
+    DLO="${i#*=}"
+    shift
+    ;;
+    --do_symm)
+    do_symm=1
+    shift
+    ;;
+    *)
+
+    ;;
+esac
+done
+#########################
 
 out_name=refined_${pinch_name}_MTI${MTI}_MLI${MLI}_DTO${DTO}_DLO${DLO}_do_symm${do_symm}
 
@@ -56,5 +90,4 @@ echo "=============== end submit file =============="
 
 condor_submit temp_submit_file.sub
 rm temp_submit_file.sub
-#+JobFlavour = "nextweek"
 
