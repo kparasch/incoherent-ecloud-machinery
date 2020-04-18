@@ -60,8 +60,10 @@ epsn_y = 1.7e-6
 sigma_z = 0.08244
 #sigma_z = 9.181144e-02
 
-x_kick_in_sigmas = 0.1
-y_kick_in_sigmas = 0.1
+x_kick_in_sigmas = 0.0
+y_kick_in_sigmas = 0.0
+
+recenter_all_slices = True
 
 # Numerical Parameters
 n_slices = 500

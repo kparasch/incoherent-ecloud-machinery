@@ -56,11 +56,11 @@ zg_new = np.linspace(zg[3],zg[-4],int((zg[-4]-zg[3])/dz_new)+1) # skip three fir
 Nd = N_nodes_discard + 3
 
 dx_new = pic_out.dx*demagnify_transverse_out
-nx_new = int((pic_out.xg[-Nd-1] - pic_out.xg[Nd])/dx_new) + 1
+nx_new = int(np.rint((pic_out.xg[-Nd-1] - pic_out.xg[Nd])/dx_new)) + 1
 xg_new = np.linspace( pic_out.xg[Nd], pic_out.xg[-Nd-1], nx_new)
 
 dy_new = pic_out.dy*demagnify_transverse_out
-ny_new = int((pic_out.yg[-Nd-1] - pic_out.yg[Nd])/dy_new) + 1
+ny_new = int(np.rint((pic_out.yg[-Nd-1] - pic_out.yg[Nd])/dy_new)) + 1
 yg_new = np.linspace( pic_out.yg[Nd], pic_out.yg[-Nd-1], ny_new)
 
 #print(zg[:5])
@@ -188,7 +188,7 @@ ex0 = kfm.h5_to_dict(out_efname, group='slices/ex_slice%d'%kk)['ex']
 ey0 = kfm.h5_to_dict(out_efname, group='slices/ey_slice%d'%kk)['ey']
 ez0 = kfm.h5_to_dict(out_efname, group='slices/ez_slice%d'%kk)['ez']
 for kk in range(1,len(zg_new)):
-    if (1.*kk)/slice_index >= perc:
+    if (1.*kk)/len(zg_new) >= perc:
         print('%d%%... '%(int(kk/slice_index*100)))
         perc += 0.1
     phi1 = kfm.h5_to_dict(out_fname, group='slices/slice%d'%kk)['phi']
@@ -261,5 +261,5 @@ end_time = time.time()
 print('Running time: %f mins'%((end_time-start_time)/60.))
 
 shutil.copyfile(out_fname, pinches_folder+out_fname)
-shutil.copyfile(out_efname, pinches_folder+out_efname)
+#shutil.copyfile(out_efname, pinches_folder+out_efname)
 
