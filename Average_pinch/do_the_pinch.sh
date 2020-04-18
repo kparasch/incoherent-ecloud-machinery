@@ -13,11 +13,34 @@ export PYTHONPATH=$myhome/incoherent-ecloud-machinery/Tools:$PYTHONPATH
 
 which pip
 
-pinch_name=Pinch$1
+pinch_name="wrong_pinch_name"
 workers=24
-nPinches=3000
+nPinches=4000
 final_destination=/eos/user/k/kparasch/Pinches
-#$myhome/incoherent-ecloud-machinery/Average_pinch
+
+
+#### Argument Parser ####
+for i in "$@"
+do
+case $i in
+    --pinch_name=*)
+    pinch_name="${i#*=}"
+    shift
+    ;;
+    --workers=*)
+    workers="${i#*=}"
+    shift
+    ;;
+    --nPinches=*)
+    nPinches="${i#*=}"
+    shift
+    ;;
+    *)
+
+    ;;
+esac
+done
+#########################
 
 
 if [[ -d "$pinch_name" ]]
@@ -41,8 +64,6 @@ error = $pinch_name/$pinch_name.err
 log = $pinch_name/$pinch_name.log
 transfer_input_files = $pinch_name
 RequestCpus = 24
-stream_output = True
-stream_error = True
 +BigMemJob = True
 +MaxRunTime = 259200
 queue
@@ -51,5 +72,8 @@ echo "=============== end submit file =============="
 
 condor_submit temp_submit_file.sub
 rm temp_submit_file.sub
+
 #+JobFlavour = "nextweek"
+#stream_output = True
+#stream_error = True
 
