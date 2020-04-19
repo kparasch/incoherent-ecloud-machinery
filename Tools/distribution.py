@@ -3,6 +3,50 @@ import sixtracklib
 import numpy as np
 from scipy.constants import c
 
+def get_DA_distribution(n_particles_approx, n_sigma, ptau_max, epsn_1, epsn_2, optics):
+    W = optics['W']
+    invW = optics['invW']
+    gamma0 = optics['gamma0']
+    beta0 = optics['beta0']
+
+    e1 = epsn_1/(beta0*gamma0)
+    e2 = epsn_2/(beta0*gamma0)
+
+    init_denormalized_6D = np.empty([1, 6])
+    init_denormalized_6D[0,0] = 0.
+    init_denormalized_6D[0,1] = 0.
+    init_denormalized_6D[0,2] = 0.
+    init_denormalized_6D[0,3] = 0.
+    init_denormalized_6D[0,4] = 0.
+    init_denormalized_6D[0,5] = ptau_max
+    init_normalized_6D_temp = np.tensordot(invW, init_denormalized_6D, [1,1]).T
+
+    theta_min = 0.
+    theta_max = 90.
+    theta_N = 91
+    r_min = 0.1
+    r_max = n_sigma
+    r_N = int(n_particles_approx/91.)
+
+    A1_A2_in_sigma = np.array([[(r*np.cos(theta),r*np.sin(theta)) for r in np.linspace(r_min,r_max,r_N)] for theta in np.linspace(theta_min,theta_max,theta_N)])
+    
+    n_particles = theta_N*r_N
+
+    A1_A2_in_sigma_unrolled = A1_A2_in_sigma.reshape(n_particles, 2)
+
+
+    init_normalized_6D = np.empty([n_particles, 6])
+    init_normalized_6D[:,0] = A1_A2_in_sigma_unrolled[:,0] * np.sqrt(e1)
+    init_normalized_6D[:,1] = 0.
+    init_normalized_6D[:,2] = A1_A2_in_sigma_unrolled[:,1] * np.sqrt(e2)
+    init_normalized_6D[:,3] = 0.
+    init_normalized_6D[:,4] = 0.
+    init_normalized_6D[:,5] = init_normalized_6D_temp[0,5]
+
+    init_denormalized_coordinates = np.tensordot(W, init_normalized_6D, [1,1]).T
+
+    return init_denormalized_coordinates, A1_A2_in_sigma, n_particles
+
 def get_fma_distribution(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics, seed=0):
     W = optics['W']
     invW = optics['invW']

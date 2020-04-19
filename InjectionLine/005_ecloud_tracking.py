@@ -37,9 +37,9 @@ with open(fEclouds, 'rb') as fid:
 
 ecloud_scale = float(sys.argv[1])
 for key in eclouds_info['length'].keys():
-    eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])
+    eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])/3000.
 
-device='opencl:0.3'
+device='opencl:0.2'
 n_stores = 1000
 n_particles = 20000
 n_sigma = 5
@@ -68,7 +68,8 @@ J1, J2 = distribution.J1_J2_from_physical(init_denormalized_6D, optics['invW'], 
 ecloud_lattice = ec_stl.LatticeWithEclouds(line, eclouds_info, ps, device=device)
 ecloud_lattice.set_optics_CO(optics, partCO)
 
-ecloud_lattice.add_tricub_data('refined_Pinch10_MTI4.0_MLI2.0_DTO1.0_DLO1.0.h5', 'drift', max_z=0.15)
+ecloud_lattice.add_tricub_data(sys.argv[2], 'drift', max_z=0.15)
+#ecloud_lattice.add_tricub_data('refined_Pinch10_MTI4.0_MLI2.0_DTO1.0_DLO1.0.h5', 'drift', max_z=0.15)
 
 tricub_to_tricub_data = {}
 for key in eclouds_info['length'].keys():
@@ -90,4 +91,5 @@ output_to_save = {'turn_q'        : np.array(ecloud_lattice.turn_q_list),
                   'J2'            : J2/se2**2
                  }
 
-kfm.dict_to_h5(output_to_save, f'fma_tunes_ec_scale{ecloud_scale:.2f}_IMO_0_ref.h5')
+#kfm.dict_to_h5(output_to_save, f'fma_tunes_ec_scale{ecloud_scale:.2f}_IMO_0_ref.h5')
+kfm.dict_to_h5(output_to_save, f'fma_tunes_ec_scale{ecloud_scale:.2f}_IMO_0_'+sys.argv[2]+'.h5')

@@ -29,7 +29,12 @@ sbx = {}
 sby = {}
 xco = {}
 yco = {}
-deg3 = 127.5
+deg3 = 126.91 # 133 acts as if 127.5. strange!
+rot3 = deg3
+#deg3 = 127.5
+#deg3 = 126.91
+#deg3 = 90-127.5
+rad3 = deg3*np.pi/180.
 for i in range(len(twiss.name)):
     elname = twiss.name[i].split(':')[0]
     if elname in [tcp1, tcp2, tcp3]:
@@ -44,15 +49,18 @@ for i in range(len(twiss.name)):
         print(twiss.y[i])
         print()
 
-tcp_d6l7 = pysixtrack.elements.LimitRect(min_x = -nc*sbx[tcp1] + xco[tcp1], max_x = nc*sbx[tcp1] + xco[tcp1])
-tcp_c6l7 = pysixtrack.elements.LimitRect(min_y = -nc*sby[tcp2] + yco[tcp2], max_y = nc*sby[tcp2] + yco[tcp2])
-sb3 = (sbx[tcp3]**2 + sby[tcp3]**2)**0.5
-co3 = (xco[tcp3]**2 + yco[tcp3]**2)**0.5
+tcp_d6l7 = pysixtrack.elements.LimitRect(min_y = -nc*sby[tcp1] + yco[tcp1], max_y = nc*sby[tcp1] + yco[tcp1])
+tcp_c6l7 = pysixtrack.elements.LimitRect(min_x = -nc*sbx[tcp2] + xco[tcp2], max_x = nc*sbx[tcp2] + xco[tcp2])
+#sb3 = ((sbx[tcp3]*np.cos(rad3))**2 + (sby[tcp3]*np.sin(rad3))**2)**0.5
+sb3 = np.sqrt(1./((np.cos(rad3)/sbx[tcp3])**2 + (np.sin(rad3)/sby[tcp3])**2))
+#sb3 = ((sbx[tcp3]*np.cos(rad3))**2 + (sby[tcp3]*np.sin(rad3))**2)**0.5
+#co3 = (xco[tcp3]**2 + yco[tcp3]**2)**0.5
+co3=0
 shift1 = pysixtrack.elements.XYShift(dx=xco[tcp3],dy=yco[tcp3])
 shift2 = pysixtrack.elements.XYShift(dx=-xco[tcp3],dy=-yco[tcp3])
-rot1 = pysixtrack.elements.SRotation(angle=-deg3)
-rot2 = pysixtrack.elements.SRotation(angle=deg3)
-tcp_b6l7 = pysixtrack.elements.LimitRect(min_y = -nc*sb3, max_y = nc*sb3)
+rot1 = pysixtrack.elements.SRotation(angle=-rot3)
+rot2 = pysixtrack.elements.SRotation(angle=+rot3)
+tcp_b6l7 = pysixtrack.elements.LimitRect(min_x = -nc*sb3, max_x = nc*sb3)
 
 
 
