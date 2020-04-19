@@ -21,8 +21,9 @@ def get_DA_distribution(n_particles_approx, n_sigma, ptau_max, epsn_1, epsn_2, o
     init_denormalized_6D[0,5] = ptau_max
     init_normalized_6D_temp = np.tensordot(invW, init_denormalized_6D, [1,1]).T
 
-    theta_min = 0.
-    theta_max = 90.
+    deg2rad = np.pi/180.
+    theta_min = 0. * deg2rad
+    theta_max = 90. * deg2rad
     theta_N = 91
     r_min = 0.1
     r_max = n_sigma

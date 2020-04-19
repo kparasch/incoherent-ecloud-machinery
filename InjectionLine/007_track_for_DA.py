@@ -66,7 +66,7 @@ if do_ecloud:
 n_stores = 1
 turn_to_track=1000000
 n_particles_approx = 20000
-n_sigma = 5
+n_sigma = 5.7
 epsn_1 = 3.5e-6
 epsn_2 = 3.5e-6
 
