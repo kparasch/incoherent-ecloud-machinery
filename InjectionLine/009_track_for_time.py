@@ -25,6 +25,9 @@ parser.add_argument('--pinch', nargs='?', type=str)
 parser.add_argument('--ptau_max', nargs='?', default=0., type=float)
 parser.add_argument('--max_tau', nargs='?', default=0.1, type=float)
 parser.add_argument('--output', nargs='?', default='temp.h5', type=str)
+parser.add_argument('--n_particles', nargs='?', default=10000, type=int)
+parser.add_argument('--turns', nargs='?', default=100, type=int)
+parser.add_argument('--max_eclouds', nargs='?', default=None, type=int)
 args = parser.parse_args()
 if args.line_folder[-1] != '/':
     args.line_folder += '/'
@@ -39,7 +42,9 @@ ecloud_scale = args.ecloud_strength
 do_ecloud = args.do_ecloud
 max_tau = args.max_tau
 output_file = args.output
-
+n_particles = args.n_particles
+turn_to_track = args.turns
+max_ecloud_kicks = args.max_eclouds
 
 
 fOptics = line_folder + 'optics.pkl'
@@ -60,26 +65,34 @@ if do_ecloud:
     with open(fEclouds, 'rb') as fid:
         eclouds_info = pickle.load(fid)
     
+    ii = 0
+    keys_to_delete = []
     for key in eclouds_info['length'].keys():
         eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])
+        ii += 1
+        if max_ecloud_kicks is not None:
+            if ii > max_ecloud_kicks:
+                keys_to_delete.append(key)
+    for key in keys_to_delete:
+        del eclouds_info['length'][key]
 
 n_stores = 1
-turn_to_track=1000000
-n_particles_approx = 20000
-n_sigma = 5.7
-epsn_1 = 3.5e-6
-epsn_2 = 3.5e-6
+n_sigma = 1.e-10
+epsn_1 = 0.1e-12
+epsn_2 = 0.1e-12
+seed=0
+line.disable_beambeam()
 
 se1 = np.sqrt(epsn_1/optics['gamma0']/optics['beta0'])
 se2 = np.sqrt(epsn_2/optics['gamma0']/optics['beta0'])
 
 line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores,is_rolling=True),'monitor1')
 
-init_denormalized_6D, A1_A2_in_sigma, n_particles = distribution.get_DA_distribution(
-                                                     n_particles_approx=n_particles_approx, 
+init_denormalized_6D = distribution.get6D_with_fixed_J3(
+                                                     n_particles=n_particles, 
                                                      n_sigma=n_sigma, ptau_max=ptau_max, 
                                                      epsn_1=epsn_1, epsn_2=epsn_2, 
-                                                     optics=optics
+                                                     optics=optics, seed=seed
                                                                                      )
 
 init_denormalized_6D = distribution.apply_closed_orbit(init_denormalized_6D, partCO)
@@ -103,6 +116,7 @@ else:
     line.remove_inactive_multipoles(inplace=True)
     line.remove_zero_length_drifts(inplace=True)
     line.merge_consecutive_drifts(inplace=True)
+    print(f'Number of elements in line: {len(line.elements)}')
     elements = sixtracklib.Elements.from_line(line)
     job = sixtracklib.TrackJob(elements, ps, device=device)
 
@@ -114,10 +128,11 @@ start_tracking = time.time()
 job.track_until(turn_to_track)
 job.collect()
 end_tracking = time.time()
-print(f'Tracking time: {(end_tracking - start_tracking)/60.}mins')
+print(f'Turns tracked: {turn_to_track}')
+print(f'Tracking time: {(end_tracking - start_tracking)/60.:.3f}mins')
 
 parts = job.output.particles[0]
-shape = A1_A2_in_sigma.shape[:2]
+shape = [n_particles]
 
 init_dict = {'x'    : init_denormalized_6D[:,0].reshape(shape),
              'px'   : init_denormalized_6D[:,1].reshape(shape),
@@ -125,8 +140,6 @@ init_dict = {'x'    : init_denormalized_6D[:,0].reshape(shape),
              'py'   : init_denormalized_6D[:,3].reshape(shape),
              'tau'  : init_denormalized_6D[:,4].reshape(shape),
              'ptau' : init_denormalized_6D[:,5].reshape(shape),
-             'A1'   : A1_A2_in_sigma[:,:,0],
-             'A2'   : A1_A2_in_sigma[:,:,1],
              'J1'   : J1.reshape(shape)/se1**2,
              'J2'   : J2.reshape(shape)/se2**2
              }
@@ -140,6 +153,7 @@ last_dict = {'x'    : parts.x.reshape(shape),
              'at_turn'   : parts.at_turn.reshape(shape)
             }
 
+print(f'Actual turns tracked: {1.*np.sum(parts.at_turn.reshape(shape)*1.0+1)/n_particles}')
 time_dict = {'setup_time_mins' : (end_setup_time - start_time)/60.,
              'tracking_time_mins' : (end_tracking - start_tracking)/60.
             }

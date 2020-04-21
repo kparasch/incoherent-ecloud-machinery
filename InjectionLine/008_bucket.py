@@ -53,7 +53,7 @@ if do_ecloud:
         eclouds_info = pickle.load(fid)
     
     for key in eclouds_info['length'].keys():
-        eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])/3000.
+        eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])
 
 n_sigma = 5
 epsn_1 = 3.5e-6
