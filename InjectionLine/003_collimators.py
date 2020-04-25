@@ -29,6 +29,7 @@ sbx = {}
 sby = {}
 xco = {}
 yco = {}
+#deg3 = 100. # 133 acts as if 127.5. strange!
 deg3 = 126.91 # 133 acts as if 127.5. strange!
 rot3 = deg3
 #deg3 = 127.5
@@ -52,14 +53,16 @@ for i in range(len(twiss.name)):
 tcp_d6l7 = pysixtrack.elements.LimitRect(min_y = -nc*sby[tcp1] + yco[tcp1], max_y = nc*sby[tcp1] + yco[tcp1])
 tcp_c6l7 = pysixtrack.elements.LimitRect(min_x = -nc*sbx[tcp2] + xco[tcp2], max_x = nc*sbx[tcp2] + xco[tcp2])
 #sb3 = ((sbx[tcp3]*np.cos(rad3))**2 + (sby[tcp3]*np.sin(rad3))**2)**0.5
-sb3 = np.sqrt(1./((np.cos(rad3)/sbx[tcp3])**2 + (np.sin(rad3)/sby[tcp3])**2))
+phi3 = np.arctan( - np.tan(np.pi/2. - rad3) * sbx[tcp3] / sby[tcp3] )
+sb3 = sby[tcp3] * np.sin(rad3) / np.cos(phi3)
+#sb3 = np.sqrt(1./((np.cos(rad3)/sbx[tcp3])**2 + (np.sin(rad3)/sby[tcp3])**2))
 #sb3 = ((sbx[tcp3]*np.cos(rad3))**2 + (sby[tcp3]*np.sin(rad3))**2)**0.5
 #co3 = (xco[tcp3]**2 + yco[tcp3]**2)**0.5
 co3=0
 shift1 = pysixtrack.elements.XYShift(dx=xco[tcp3],dy=yco[tcp3])
 shift2 = pysixtrack.elements.XYShift(dx=-xco[tcp3],dy=-yco[tcp3])
-rot1 = pysixtrack.elements.SRotation(angle=-rot3)
-rot2 = pysixtrack.elements.SRotation(angle=+rot3)
+rot1 = pysixtrack.elements.SRotation(angle=+rot3)
+rot2 = pysixtrack.elements.SRotation(angle=-rot3)
 tcp_b6l7 = pysixtrack.elements.LimitRect(min_x = -nc*sb3, max_x = nc*sb3)
 
 
@@ -90,3 +93,5 @@ for pp in line.element_names[itcp3-6:itcp3+6]:
 
 with open('line_with_ecloud_markers_and_collimators.pkl','wb') as fid:
     line = pickle.dump(line.to_dict(keepextra=True),fid)
+
+print(f'Collimation angle in A1-A2 space = {phi3*180./np.pi}')
