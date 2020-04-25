@@ -4,6 +4,9 @@ import numpy as np
 from cpymad.madx import Madx
 import matplotlib.pyplot as plt
 
+import sys
+sys.path.append('../Tools')
+import pyht_beamsize
 #plt.style.use('kostas')
 plt.close('all')
 
@@ -151,22 +154,30 @@ roff = 0.5e3
 betx_ec = []
 bety_ec = []
 dispx_ec = []
+dispy_ec = []
 name_ec = []
 name_ip = []
 s_ec = []
 sig11_ec = []
 sig33_ec = []
 s_ip = []
+
+epsn_x = mad.sequence['lhcb1'].beam.exn
+epsn_y = mad.sequence['lhcb1'].beam.eyn
+sigma_z = mad.sequence['lhcb1'].beam.sigt
+
 for i in range(len(survey.name)):
     if survey.name[i][0:3] == 'ecl':
         ax3.plot(survey.z[i], survey.x[i], 'r.')
         betx_ec.append(twiss.betx[i])
         bety_ec.append(twiss.bety[i])
         dispx_ec.append(twiss.dx[i])
+        dispy_ec.append(twiss.dy[i])
         name_ec.append(twiss.name[i])
         s_ec.append(twiss.s[i])
         sig11_ec.append(twiss.sig11[i])
         sig33_ec.append(twiss.sig33[i])
+
     if survey.name[i][0:2] == 'ip' and survey.name[i][3] == ':':
 
         s_ip.append(survey.s[i])
@@ -183,6 +194,12 @@ for i in range(len(survey.name)):
                  horizontalalignment='center', verticalalignment='center')
         print(survey.name[i])
 
+latex_name_ip = ['$\\mathbf{'+name+'}$' for name in name_ip]
+sig1_nonlin, sig2_nonlin, sig1_lin, sig2_lin = pyht_beamsize.sigmas(epsn_x=epsn_x, epsn_y=epsn_y, sigma_z=sigma_z, 
+          beta_x=np.mean(betx_ec), beta_y=np.mean(bety_ec), D_x=np.mean(dispx_ec), D_y=np.mean(dispy_ec),
+          alpha_mom_compaction=optics['alfa'], circumference=optics['length'],
+          rf_harmonic=optics['rf_harmon'], V_rf=optics['rf_volt_V'], gamma0=optics['gamma0'])
+
 
 sx = np.mean(np.sqrt(sig11_ec))*1000
 sxerr = np.std(np.sqrt(sig11_ec))*1000
@@ -192,24 +209,45 @@ print(f'Horizontal beam size on eclouds = {sx:.4f} +- {sxerr:.4f} ({100*sxerr/sx
 print(f'Vertical beam size on eclouds = {sy:.4f} +- {syerr:.4f} ({100*syerr/sy:.1f}%) [mm]')
 print(f'Max horizontal beam size on eclouds = {1000*np.max(np.sqrt(sig11_ec))} [mm]')
 print(f'Max vertical beam size on eclouds = {1000*np.max(np.sqrt(sig33_ec))} [mm]')
+print('PyHEADTAIL beam size:')
+print(f'  Linear bucket:')
+print(f'    Horizontal beam size = {sig1_lin*1000:.4f} [mm]')
+print(f'    Vertical   beam size = {sig2_lin*1000:.4f} [mm]')
+print(f'  Non-linear bucket:')
+print(f'    Horizontal beam size = {sig1_nonlin*1000:.4f} [mm]')
+print(f'    Vertical   beam size = {sig2_nonlin*1000:.4f} [mm]')
 fig4 = plt.figure(4)
 ax4 = fig4.add_subplot(111)
 
-ax4.plot(s_ec,betx_ec,'.-',label='$\\mathbf{\\beta_x}$')
-ax4.plot(s_ec,bety_ec,'.-',label='$\\mathbf{\\beta_y}$')
-ax4.plot(s_ec,dispx_ec,'.-',label='$\\mathbf{\\D_x}$')
-[ax4.axvline(this_s_ip,c='k') for this_s_ip in s_ip]
-ax4.set_ylabel('$\\mathbf{\\beta,D\ [m]}$')
+ax4.plot(s_ec,betx_ec,'k.-',label='$\\mathbf{\\beta_x}$')
+ax4.plot(s_ec,bety_ec,'r.-',label='$\\mathbf{\\beta_y}$')
+ax4.plot([0,1],[0,0],'b.-', label='$\\mathbf{D_x}$')
+ax42 = ax4.twinx()
+ax42.plot(s_ec,dispx_ec,'b.-',label='$\\mathbf{D_x}$')
+[ax4.axvline(this_s_ip,c='k', linestyle='dashed', alpha=0.5) for this_s_ip in s_ip]
+ax4.set_ylabel('$\\mathbf{\\beta\ [m]}$')
+ax42.set_ylabel('$\\mathbf{D\ [m]}$',color='b')
+ax4.set_ylim(70,90)
+ax42.set_ylim(1,3.5)
 ax4.set_xlabel('$\\mathbf{s\ [m]}$')
-plt.xticks(s_ip, name_ip)
+plt.xticks(s_ip, latex_name_ip)
+ax4.legend(loc='upper left')
+ax4.grid(False)
+ax42.grid(False)
+fig4.subplots_adjust(right=0.90)
 
 fig5 = plt.figure(5)
 ax5 = fig5.add_subplot(111)
-ax5.plot(s_ec,np.sqrt(sig11_ec),'.-',label='$\\mathbf{\\sigma_x}$')
-ax5.plot(s_ec,np.sqrt(sig33_ec),'.-',label='$\\mathbf{\\sigma_y}$')
-[ax5.axvline(this_s_ip,c='k') for this_s_ip in s_ip]
+ax5.plot(s_ec,np.sqrt(sig11_ec),'k.-',label='$\\mathbf{\\sigma_x}$')
+ax5.plot(s_ec,np.sqrt(sig33_ec),'r.-',label='$\\mathbf{\\sigma_y}$')
+ax5.axhline(sig1_lin, label='$\\mathbf{PyHT\ linear}$', color='b', linewidth=3.0)
+ax5.axhline(sig2_lin, color='b', linewidth=3.0)
+ax5.axhline(sig1_nonlin, label='$\\mathbf{PyHT\ non\\mbox{-}linear}$', color='g', linewidth=3.0)
+ax5.axhline(sig2_nonlin, color='g', linewidth=3.0)
+[ax5.axvline(this_s_ip,c='k', linestyle='dashed', alpha=0.5) for this_s_ip in s_ip]
 ax5.legend()
-ax5.set_ylabel('$\\mathbf{\\sigma [m]}$')
+ax5.set_ylabel('$\\mathbf{\\sigma\ [m]}$')
 ax5.set_xlabel('$\\mathbf{s\ [m]}$')
-plt.xticks(s_ip, name_ip)
+ax5.grid(False)
+plt.xticks(s_ip, latex_name_ip)
 plt.show()
