@@ -34,6 +34,13 @@ e1 = epsn_1/(beta0*gamma0)
 e2 = epsn_2/(beta0*gamma0)
 ref_epsn = 3.5e-6
 coll_r = 5.7*np.sqrt(ref_epsn/epsn_1)
+disable_sextupoles = True
+
+for ii in range(nn):
+    if line.elements[ii].__class__ is pysixtrack.elements.Multipole:
+        order = line.elements[ii].order
+        if order == 2:
+            line.elements[ii].knl[2] = 0.
 
 #init_denormalized_6D = distribution.get6D_with_fixed_J3(n_particles=n_particles, 
 init_denormalized_6D = distribution.get_fma_distribution(n_particles=n_particles, 
