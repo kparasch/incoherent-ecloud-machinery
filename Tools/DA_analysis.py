@@ -2,15 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 
-def plot_init(coll_r, axis):
+def plot_init(coll_r, axis, label='Initial cond.'):
     x_circ = np.linspace(0,coll_r,1000)
     y_circ = np.sqrt(1 - (x_circ/coll_r)**2)*coll_r
-    axis.plot(x_circ, y_circ, 'k:', label='Initial cond.')
+    axis.plot(x_circ, y_circ, 'k:', label=label)
 
-def plot_collimation(coll_r, axis, label=None):
-    coll_deg = 126.91
-    coll_deg = 135
-    a = np.tan(coll_deg*np.pi/180.)
+def plot_collimation(coll_r, axis, label='Phys. Aperture'):
+    coll_deg = 43.772
+    a = -np.tan(coll_deg*np.pi/180.)
     cs = np.abs(np.cos(coll_deg*np.pi/180.))
 
     x1 = coll_r*(1.-1./cs)/a
@@ -21,7 +20,7 @@ def plot_collimation(coll_r, axis, label=None):
 
     axis.plot([0,x1],[coll_r,coll_r], color='k', linewidth=3.0)
     axis.plot([x1,x2],[y1,y2], color='k', linewidth=3.0)
-    axis.plot([x2,x2],[0,y2], color='k', linewidth=3.0, label='Phys. Aperture')
+    axis.plot([x2,x2],[0,y2], color='k', linewidth=3.0, label=label)
 
 def plot_DA(fname, axis, label=None, fmt=None, linewidth=2.0):
     #fname = 'DA_IMO_40_ptau_6.6e-4_ecloud.h5'
