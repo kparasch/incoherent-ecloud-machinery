@@ -37,7 +37,12 @@ pp_dict['n_pinches_to_average'] = n_pinches_to_average
 pp_dict['out_dir'] = out_dir
 
 
-def one_pinch(mydict, lock, N_pinches=1, save_sigmas_and_coords=False, idd=0, grid=None):
+if pp.custom_edensity is not None:
+    eden = pickle.load(open(pp.custom_edensity,'rb'))
+else:
+    eden = None
+
+def one_pinch(mydict, lock, N_pinches=1, save_sigmas_and_coords=False, idd=0, grid=None, eden=None):
     os.mkdir('temp'+str(idd))
     shutil.copytree('pyecloud_config', 'temp'+str(idd)+'/pyecloud_config')
     shutil.copyfile('Simulation_parameters.py', 'temp'+str(idd)+'/Simulation_parameters.py')
@@ -65,6 +70,12 @@ def one_pinch(mydict, lock, N_pinches=1, save_sigmas_and_coords=False, idd=0, gr
     
     first_ecloud._reinitialize() # Needed to prepare storage space
     
+    if eden is not None:
+        MP_e = first_ecloud.cloudsim.cloud_list[0].MP_e
+        reweight = np.interp(MP_e.x_mp, eden['x_density'], eden['y_density']/pp.init_unif_edens_dip)
+        MP_e.nel_mp *= reweight
+        MP_e.clean_small_MPs()
+
     N_slices = len(list_slice_objects)
     z_centers = []
     t_start = time.mktime(time.localtime())
@@ -111,21 +122,21 @@ def one_pinch(mydict, lock, N_pinches=1, save_sigmas_and_coords=False, idd=0, gr
   
     return idd
 
-def kern(i, mydict, lock):
+def kern(i, mydict, lock, eden):
     print(f'Running: {i+1}')
     with open('stdout'+str(i)+'.out','w') as f:
         with contextlib.redirect_stdout(f):
-            return one_pinch(mydict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=False, idd=i+1, grid=None)
+            return one_pinch(mydict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=False, idd=i+1, grid=None, eden=eden)
 
 manager = multiprocessing.Manager()
 result_dict = manager.dict()
 grid_dict = manager.dict()
 lock = manager.Lock()
 
-i0 = one_pinch(result_dict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=True, grid=grid_dict)
+i0 = one_pinch(result_dict, lock, N_pinches=n_pinches_to_average, save_sigmas_and_coords=True, grid=grid_dict, eden=eden)
 
 with multiprocessing.Pool(workers) as pool:
-    result_list = pool.starmap_async(kern, [(ii, result_dict, lock) for ii in range(n_pinches_to_average-1)])
+    result_list = pool.starmap_async(kern, [(ii, result_dict, lock, eden) for ii in range(n_pinches_to_average-1)])
     print(result_list.get())
 
 

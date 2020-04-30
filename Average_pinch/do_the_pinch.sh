@@ -51,8 +51,8 @@ fi
 
 mkdir $pinch_name
 
-cp -r AverPinch_source/* Pinch$1/
-cp Simulation_parameters.py Pinch$1/
+cp -r AverPinch_source/* $pinch_name/
+cp Simulation_parameters.py $pinch_name/
 
 
 echo "============== start submit file ============="

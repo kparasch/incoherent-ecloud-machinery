@@ -13,7 +13,7 @@ charge = qe
 mass = m_p
 p0 = 450e9 * qe / c
 circumference = 26658.8832
-n_segments = 16
+n_segments = 1
 name = None
 s = None
 alpha_x = -1.44
@@ -52,10 +52,10 @@ dampingrate_y = 100.
 
 bunch_from_file = None
 
-intensity = 1.2e+11
+intensity = 0.7e+11
 
-epsn_x = 1.7e-6
-epsn_y = 1.7e-6
+epsn_x = 2.0e-6
+epsn_y = 2.0e-6
 
 sigma_z = 0.08244
 #sigma_z = 9.181144e-02
@@ -137,9 +137,12 @@ enable_arc_dip = True
 fraction_device_dip = 0.65
 init_unif_edens_flag_dip = 1
 init_unif_edens_dip = 1.000000e+12
-N_MP_ele_init_dip = 500000
+N_MP_ele_init_dip = 3*500000
 N_mp_max_dip = N_MP_ele_init_dip*4
-B_multip_dip = [0.0] #T
+#B_multip_dip = [0.0] #T
+B_multip_dip = [0.5355] #T
+custom_edensity = None
+#custom_edensity = '/eos/user/k/kparasch/Pinches/edensity_LHC_ArcDip_450GeV_sey1.35_0.7e11ppb.pkl'
 
 # Dedicated Quadrupole E-Cloud Settings
 enable_arc_quad = False
