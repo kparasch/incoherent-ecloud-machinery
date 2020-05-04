@@ -95,6 +95,9 @@ ez_min = np.min(ez)
 phi_min = np.min(phi)
 phi_max = np.max(phi)
 
+rho_min = np.power(np.log10(rho_max)-3, 10)
+rho[rho < rho_min] = rho_min
+
 for i_frame, z_obs in enumerate(z_movie):
     print(f'Frame {i_frame}/{len(z_movie)}')
 
