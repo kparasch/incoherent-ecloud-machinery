@@ -8,12 +8,15 @@ import distribution
 
 import pysixtrack
 import sixtracklib
-import pickle
 
+import pickle
+import argparse
+import shutil
 
 parser = argparse.ArgumentParser(description='DA simulations with e-clouds')
 parser.add_argument('--ecloud', dest='do_ecloud', action='store_true')
 parser.add_argument('--device', nargs='?', default=None, type=str)
+parser.add_argument('--copy_destination', nargs='?', default=None, type=str)
 parser.add_argument('--ecloud_strength', nargs='?', default=1., type=float)
 parser.add_argument('--line_folder', nargs='?', default='./', type=str)
 parser.add_argument('--pinch', nargs='?', type=str)
@@ -27,14 +30,16 @@ parser.add_argument('--n_sigma', nargs='?', default=5.5, type=float)
 args = parser.parse_args()
 if args.line_folder[-1] != '/':
     args.line_folder += '/'
+if args.copy_destination is not None:
+    if args.copy_destination[-1] != '/':
+        args.copy_destination += '/'
 
-args_dict = vars(args)
+args_dict = vars(args).copy()
 for key in args_dict.keys():
     if args_dict[key] is None:
         args_dict[key] = 'None'
 
 line_folder = args.line_folder
-
 device = args.device
 ptau_max = args.ptau_max
 pinch_path = args.pinch
@@ -46,7 +51,10 @@ skip_turns = args.skip_turns
 turns_per_checkpoint = args.turns_per_checkpoint
 last_checkpoint = args.last_checkpoint
 n_sigma = args.n_sigma
+copy_destination = args.copy_destination
 
+if copy_destination is not None:
+    shutil.copy(copy_destination + output_file, output_file)
 #pinch_path = 'Pinches/refined_LHC_ArcDip_1.35sey_0.7e11ppb_symm2D_MTI4.0_MLI2.0_DTO1.0_DLO1.0.h5'
 
 
@@ -55,6 +63,7 @@ fLine = line_folder + 'line_with_ecloud_markers_and_collimators.pkl'
 fPartCO = line_folder + 'part_on_CO.pkl'
 fEclouds = line_folder + 'eclouds_info.pkl'
 checkpoint = kfm.h5_to_dict(output_file, group='checkpoint')['checkpoint']
+print(f'Starting from checkpoint: {checkpoint}!')
 
 with open(fLine, 'rb') as fid:
     line = pysixtrack.Line.from_dict(pickle.load(fid),keepextra=True)
@@ -158,6 +167,9 @@ for cc in range(checkpoint+1, last_checkpoint+1):
         kfm.dict_to_h5(skip_dict, output_file, group=f'turn{turn:d}', readwrite_opts='a')
 
     kfm.overwrite(checkpoint_dict, output_file, group='checkpoint')
+
+    if copy_destination is not None:
+        shutil.copy(output_file, copy_destination + output_file)
 
     print(f'Reached checkpoint: {cc}/{last_checkpoint}')
 end_tracking = time.time()
