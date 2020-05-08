@@ -9,6 +9,11 @@ sys.path.append('../Tools/')
 import normalization
 import kostas_filemanager as kfm
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--noblock', dest='plot_block', action='store_false')
+args = parser.parse_args()
+
 inspect_closed_orbit = True
 
 with open('line_with_ecloud_markers.pkl', 'rb') as fid:
@@ -104,4 +109,4 @@ if inspect_closed_orbit:
     ax6.set_ylabel('ptau')
     ax6.plot(ptau)
     
-    plt.show()
+    plt.show(block=args.plot_block)

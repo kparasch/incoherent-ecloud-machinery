@@ -22,9 +22,19 @@ def h5_to_dict(filename, group=None):
 def h5_to_obj(filename, group=None):
     return obj_from_dict(h5_to_dict(filename, group=group))
 
+def overwrite(dict_save, filename, group=None, verbose=False):
+    with h5py.File(filename, 'a') as fid:
+        if group == None :
+            grp = fid 
+        else:
+            grp = fid[group]
+
+        for kk in dict_save.keys():
+            if verbose: print('Overwriting '+kk)
+            grp[kk][...] = dict_save[kk]
+
 def dict_to_h5(dict_save, filename, compression_opts=4, group=None, readwrite_opts='w', verbose=False):
     with h5py.File(filename, readwrite_opts) as fid:
-
         if group == None :
             grp = fid 
         else:

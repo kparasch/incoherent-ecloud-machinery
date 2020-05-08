@@ -5,6 +5,11 @@ import shutil
 
 from cpymad.madx import Madx
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--noblock', dest='plot_block', action='store_false')
+args = parser.parse_args()
+
 mad = Madx()
 
 mad.call('lhc2018_injection.mask')
@@ -36,5 +41,5 @@ ax2.plot(twiss.s, twiss.y)
 ax2.set_xlabel('$\mathbf{s [m]}$')
 ax2.set_ylabel('$\mathbf{y_{CO} [m]}$')
 
-plt.show()
+plt.show(block=args.plot_block)
 

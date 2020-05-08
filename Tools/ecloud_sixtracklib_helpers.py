@@ -6,6 +6,7 @@ import pysixtrack
 import cobjects
 import NAFFlib
 import kostas_filemanager as kfm
+import normalization
 
 class LatticeWithEclouds:
 
@@ -37,7 +38,9 @@ class LatticeWithEclouds:
 
         ecloud_list = eclouds_info['length'].keys()
 
+        print(f'Number of elements in line before cleaning: {len(line.elements)}')
         self.clean_line(line, ecloud_list)
+        print(f'Number of elements in line after cleaning: {len(line.elements)}')
         
         for element, element_name in zip(line.elements, line.element_names):
             element_type = element.__class__.__name__
@@ -82,10 +85,13 @@ class LatticeWithEclouds:
             nz = grid.Nz
             slices = range(nz)
             z0 = grid.z0
+
+        nx = len(grid.xg)
+        ny = len(grid.yg)
             
         self.tricub_data_indices[data_name] = self.tricub_data_buffer.n_objects
         self.tricub_data[data_name] = sixtracklib.TriCubData(cbuffer=self.tricub_data_buffer,
-                                                        nx=grid.Nx, ny=grid.Ny, nz=nz)
+                                                        nx=nx, ny=ny, nz=nz)
 
         tricub_data = self.tricub_data[data_name]
 
@@ -110,42 +116,80 @@ class LatticeWithEclouds:
         scale = [1., grid.dx, grid.dy, grid.dz, grid.dx * grid.dy, grid.dx * grid.dz,
                  grid.dy * grid.dz, (grid.dx * grid.dy) * grid.dz]
 
-        nx = grid.Nx
-        ny = grid.Ny
         for kk in slices:
             kk0 = kk - slices[0]
             if kk0%10 == 0:
                 print(f'Loading {data_name} ecloud data ({kk0}/{nz})')
-#            start_reading_time = time.time()
             phi = kfm.h5_to_dict(fname, group=f'slices/slice{kk}')['phi'] 
             for ll in range(8):
                 phi[:,:,ll] *= scale[ll]
-#            end_reading_time = time.time()
             
             index = 8 * (nx * ( ny * kk0))
             tricub_data.table_addr[index: index + 8 * nx * ny] = phi[:, :, :].transpose(1,0,2).flatten()
 
-#            for jj in range(ny):
-#                index = 8 * (nx * (jj + ny * kk0))
-#                tricub_data.table_addr[index: index + 8 * nx] = phi[:, jj, :].flatten()
-
-##            for ii in range(nx):
-##                for jj in range(ny)
-##                    for ll in range(8):
-##                        tricub_data.table_addr[ll + 8 * (ii + nx * (jj + ny * kk0))] = phi[ii,jj,ll]
-
-
-#            for ii in range(nx):
-#                for jj in range(ny):
-#                    for ll in range(8):
-#                        if tricub_data.table_addr[ll + 8 * (ii + nx * (jj + ny * kk0))] != phi[ii,jj,ll]:
-#                            print('False!')
-
-#            end_writing_time = time.time()
-#            print(f'Reading time: {end_reading_time - start_reading_time:.2f}s')
-#            print(f'Writing time: {end_writing_time - end_reading_time:.2f}s')
-            #breakpoint()
         self.tricub_data_buffer_ids[data_name] = self.job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
+
+        return
+
+    def remove_dipolar_kicks(self):
+        temp_lattice = sixtracklib.Elements()
+        self.elements
+        sixtracklib.Drift(cbuffer=temp_lattice.cbuffer)
+        temp_tc_index = temp_lattice.cbuffer.n_objects
+        temp_tc = sixtracklib.TriCub(cbuffer=temp_lattice.cbuffer)
+        first_ecloud = list(self.tricubs.keys())[0]
+        temp_tc.length = self.tricubs[first_ecloud].length
+        temp_tc.x_shift = 0.
+        temp_tc.y_shift = 0.
+        temp_tc.tau_shift = 0.
+        temp_tc.dipolar_kick_px = 0.
+        temp_tc.dipolar_kick_py = 0.
+        temp_tc.dipolar_kick_ptau = 0.
+
+        temp_ps = particles_set = sixtracklib.ParticlesSet()
+        particles  = particles_set.Particles(num_particles=1)
+
+        temp_part = pysixtrack.Particles(p0c=self.partCO.p0c)
+        temp_part.x = 0
+        temp_part.px = 0
+        temp_part.y = 0
+        temp_part.py = 0
+        temp_part.tau = 0
+        temp_part.ptau = 0
+        temp_part.state = 1
+        temp_part.partid = 0
+        temp_part.elemid = 0
+        temp_part.turn = 0
+        particles.from_pysixtrack(temp_part, 0)
+
+        temp_job = sixtracklib.TrackJob(temp_lattice, temp_ps, device=None)
+        temp_tricub_data_buffer_id = temp_job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
+
+        first_tricub_data = list(self.tricub_data.keys())[0]
+        sixtracklib.TriCub_buffer_create_assign_address_item(
+            temp_job, temp_tc_index, 
+            temp_tricub_data_buffer_id, 
+            self.tricub_data_indices[first_tricub_data]
+        )
+        temp_job.commit_address_assignments()
+        temp_job.assign_all_addresses()
+
+        temp_job.track_until(1)
+
+        dipolar_kick_px = particles.px[0]
+        dipolar_kick_py = particles.py[0]
+        dipolar_kick_ptau = particles.ptau[0]
+        print(dipolar_kick_px, dipolar_kick_py, dipolar_kick_ptau)
+        #dipolar_kick_px = 0.* particles.px[0]
+        #dipolar_kick_py = 0.*particles.py[0]
+        #dipolar_kick_ptau = 0.*particles.ptau[0]
+        for tc in self.tricubs.keys():
+            tc_index = self.tricub_indices[tc]
+            tricub = self.job.beam_elements_buffer.get_object(tc_index)
+            tricub.dipolar_kick_px = dipolar_kick_px
+            tricub.dipolar_kick_py = dipolar_kick_py
+            tricub.dipolar_kick_ptau = dipolar_kick_ptau
+        self.job.push_beam_elements()
 
         return
 
@@ -167,6 +211,8 @@ class LatticeWithEclouds:
     def set_optics_CO(self, optics, partCO):
         self.optics = optics
         self.partCO = pysixtrack.Particles(**partCO)
+        
+        return
 
     def fma_tracking(self, distance_between_tunes=10000, until_turn=20000, num_stores=101):
         stores_center = num_stores//2
@@ -223,5 +269,190 @@ class LatticeWithEclouds:
         qy = NAFFlib.multiparticle_tunes(phys_coords[:,:,2].T).real
         
         return q1, q2, qx, qy
+
+
+def track_to_checkpoint(job, n_particles, checkpoint=1, checkpoint_turns=1e6, monitor1_stores=100, monitor2_stores=1, skip_turns=10000):
+    start_time = time.time()
+    turn_to_track = checkpoint * checkpoint_turns
+    job.track_until(turn_to_track)
+    end_time = time.time()
+    print(f'Tracking time (1M): {(end_time - start_time)/60.:.4f}mins')
+    start_time = time.time()
+    job.collect()
+
+
+    monitor1 = job.output.particles[0]
+    monitor2 = job.output.particles[1]
+
+    p0c = monitor2.p0c[0]
+    
+    x_skip = monitor1.x.reshape(monitor1_stores, n_particles)
+    px_skip = monitor1.px.reshape(monitor1_stores, n_particles)
+    y_skip = monitor1.y.reshape(monitor1_stores, n_particles)
+    py_skip = monitor1.py.reshape(monitor1_stores, n_particles)
+    zeta_skip = monitor1.zeta.reshape(monitor1_stores, n_particles)
+    delta_skip = monitor1.delta.reshape(monitor1_stores, n_particles)
+    at_turn_skip = monitor1.at_turn.reshape(monitor1_stores, n_particles)
+
+    skip_dicts = []
+    for i in range(monitor1_stores):
+        zeta = zeta_skip[i]
+        delta = delta_skip[i]
+
+        temp_part = pysixtrack.Particles(p0c=p0c)
+        temp_part.zeta = zeta
+        temp_part.delta = delta
+
+        tau = temp_part.tau
+        ptau = temp_part.ptau
+        x = x_skip[i]
+        px = px_skip[i]
+        y = y_skip[i]
+        py = py_skip[i]
+
+        supposed_turn = turn_to_track - checkpoint_turns + (i + 1)* skip_turns
+        at_turn = at_turn_skip[i] + 1
+    #    print(at_turn, supposed_turn)
+        mask = at_turn == supposed_turn
+        not_mask = np.logical_not(mask)
+
+        x[not_mask] = 0.
+        px[not_mask] = 0.
+        y[not_mask] = 0.
+        py[not_mask] = 0.
+        tau[not_mask] = 0.
+        ptau[not_mask] = 0.
+        at_turn[not_mask] = 0.
+
+        skip_dict = {'x'    : x,
+                     'px'   : px,
+                     'y'    : y,
+                     'py'   : py, 
+                     'tau'  : tau,
+                     'ptau' : ptau,
+                     'at_turn' : at_turn
+                    }
+        skip_dicts.append((supposed_turn, skip_dict))
+    
+    x_last = monitor2.x.reshape(monitor2_stores, n_particles)
+    px_last = monitor2.px.reshape(monitor2_stores, n_particles)
+    y_last = monitor2.y.reshape(monitor2_stores, n_particles)
+    py_last = monitor2.py.reshape(monitor2_stores, n_particles)
+    zeta_last = monitor2.zeta.reshape(monitor2_stores, n_particles)
+    delta_last = monitor2.delta.reshape(monitor2_stores, n_particles)
+    at_turn_last = monitor2.at_turn.reshape(monitor2_stores, n_particles)
+    state_last = monitor2.state.reshape(monitor2_stores, n_particles)
+
+    temp_part = pysixtrack.Particles(p0c=p0c)
+    temp_part.zeta = zeta_last
+    temp_part.delta = delta_last
+    tau_last = temp_part.tau
+    ptau_last = temp_part.ptau
+
+    last_dict = {'x' : x_last.flatten(),
+                 'px' : px_last.flatten(),
+                 'y'  : y_last.flatten(),
+                 'py' : py_last.flatten(),
+                 'tau' : tau_last.flatten(),
+                 'ptau' : ptau_last.flatten(),
+                 'at_turn' : at_turn_last.flatten(),
+                 'state' : state_last.flatten()
+                }
+    
+
+    end_time = time.time()
+    print(f'Processing time: {(end_time - start_time)/60.:.4f}mins')
+    return skip_dicts, last_dict
+
+
+def update_optics(line, eclouds_info, optics, partCO, pinch_path):
+    new_optics = optics.copy()
+    d = 1.e-10
+    init_part = pysixtrack.Particles(**partCO)
+    init_part.x     += np.array([0., 1.*d, 0., 0., 0., 0., 0.])
+    init_part.px    += np.array([0., 0., 1.*d, 0., 0., 0., 0.])
+    init_part.y     += np.array([0., 0., 0., 1.*d, 0., 0., 0.])
+    init_part.py    += np.array([0., 0., 0., 0., 1.*d, 0., 0.])
+    init_part.tau   += np.array([0., 0., 0., 0., 0., 1.*d, 0.])
+    init_part.ptau  += np.array([0., 0., 0., 0., 0., 0., 1.*d])
+    
+    n_part = 7
+
+    ps = sixtracklib.ParticlesSet()
+    p = ps.Particles(num_particles=n_part)
+
+    for i_part in range(n_part):
+        part = pysixtrack.Particles(p0c=init_part.p0c)
+
+        part.x    = init_part.x[i_part]
+        part.px   = init_part.px[i_part]
+        part.y    = init_part.y[i_part]
+        part.py   = init_part.py[i_part]
+        part.tau  = init_part.tau[i_part]
+        part.ptau = init_part.ptau[i_part]
+
+        part.partid = i_part
+        part.state  = 1
+        part.elemid = 0
+        part.turn   = 0
+
+        p.from_pysixtrack(part, i_part)
+
+    ecloud_lattice = LatticeWithEclouds(line, eclouds_info, ps, device=None)
+    ecloud_lattice.set_optics_CO(optics, partCO)
+    ecloud_lattice.add_tricub_data(pinch_path, 'dipole', max_z=0.05)
+    ecloud_lattice.remove_dipolar_kicks()
+
+    tricub_to_tricub_data = {}
+    for key in eclouds_info['length'].keys():
+        tricub_to_tricub_data[key] = 'dipole'
+    ecloud_lattice.finalize_assignments(tricub_to_tricub_data)
+    job = ecloud_lattice.job
+    job.track_until(1)
+
+    X_init = np.empty([6,7])
+    X_fin = np.empty([6,7])
+    X_init[0,:] = init_part.x
+    X_init[1,:] = init_part.px
+    X_init[2,:] = init_part.y
+    X_init[3,:] = init_part.py
+    X_init[4,:] = init_part.tau
+    X_init[5,:] = init_part.ptau
+
+    fin_part = pysixtrack.Particles(p0c=init_part.p0c)
+    fin_part.x     = p.x.flatten()
+    fin_part.px    = p.px.flatten()
+    fin_part.y     = p.y.flatten()
+    fin_part.py    = p.py.flatten()
+    fin_part.zeta  = p.zeta.flatten()
+    fin_part.delta = p.delta.flatten()
+
+    X_fin[0,:] = fin_part.x
+    X_fin[1,:] = fin_part.px
+    X_fin[2,:] = fin_part.y
+    X_fin[3,:] = fin_part.py
+    X_fin[4,:] = fin_part.tau
+    X_fin[5,:] = fin_part.ptau
+
+    m = X_fin[:, 0] - X_init[:, 0]
+    M = np.empty([6, 6])
+    for j in range(6):
+        M[:,j] = (X_fin[:,j+1] - X_fin[:,0]) / d
+
+    Ms = normalization.healy_symplectify(M)
+    W, invW, R = normalization.linear_normal_form(Ms)
+    q1 = np.arccos(R[0,0])/np.pi/2.
+    q2 = np.arccos(R[2,2])/np.pi/2.
+    Qs = np.arccos(R[4,4])/np.pi/2.
+    
+    new_optics['W'] = W
+    new_optics['invW'] = invW
+    new_optics['R'] = R
+    new_optics['new_Qs'] = Qs
+    new_optics['new_q1'] = q1
+    new_optics['new_q2'] = q2
+
+    return new_optics
+
 
 

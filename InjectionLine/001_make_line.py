@@ -10,6 +10,11 @@ import pyht_beamsize
 #plt.style.use('kostas')
 plt.close('all')
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--noblock', dest='plot_block', action='store_false')
+args = parser.parse_args()
+
 mad = Madx()
 
 mad.options.echo = False
@@ -22,6 +27,9 @@ mad.use('lhcb1')
 
 twiss = mad.twiss()
 
+option = 'every-mb.b'
+#option = 'between-mq'
+
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
 ax1.plot(twiss.s, twiss.x)
@@ -31,16 +39,7 @@ ax1.plot(twiss.s, twiss.y)
 ax1.set_xlabel('$\mathbf{s [m]}$')
 ax1.set_ylabel('$\mathbf{y_{CO} [m]}$')
 
-#fig2 = plt.figure(2)
-#ax2 = fig2.add_subplot(111)
-#
-#ax2.plot(twiss.s, twiss.betx)
-#ax2.plot(twiss.s, twiss.bety)
-#ax2.plot(twiss.s, twiss.dx)
-#ax2.set_xlabel('$\mathbf{s [m]}$')
-#ax2.set_ylabel('$\mathbf{\\beta_{x},\\beta_{y},D_{x} [m]}$')
-
-#find quadrupoles between  s.arc and e.arc
+#find dipoles and quadrupoles between  s.arc and e.arc
 start_arcs = []
 end_arcs = []
 name_arcs = []
@@ -52,26 +51,39 @@ for i,el in enumerate(twiss.name):
         end_arcs.append(i)
 
 mq_arc = []
+mbb_arc = []
 for i in range(8): #arcs
     mq_list = []
+    mbb_list = []
     for j in range(start_arcs[i],end_arcs[i]):
         el_name = twiss.name[j].split(':')[0]
         if len(el_name.split('..')) > 1:
             continue
         if el_name.split('.')[0] in ['mq']:
             mq_list.append(j)
+        if el_name[0:4] in ['mb.b']:
+            mbb_list.append(j)
     mq_arc.append(mq_list)
+    mbb_arc.append(mbb_list)
 
 print([len(i) for i in mq_arc])
 
 ecloud_arc = []
 ecloud_lengths = []
-for mq_list in mq_arc:
-    mq_s = np.array(twiss.s[mq_list])
-    ecloud_s = (mq_s[:-1] + mq_s[1:])/2.
-    ecloud_l = (mq_s[1:] - mq_s[:-1])
-    ecloud_arc.append(list(ecloud_s))
-    ecloud_lengths.append(list(ecloud_l))
+if option == 'every-mb.b':
+    for mbb_list in mbb_arc:
+        mbb_s = np.array(twiss.s[mbb_list])
+        ecloud_s = mbb_s.copy()
+        ecloud_l = 3*14.3*np.ones_like(ecloud_s)
+        ecloud_arc.append(list(ecloud_s))
+        ecloud_lengths.append(list(ecloud_l))
+elif option == 'between-mq':
+    for mq_list in mq_arc:
+        mq_s = np.array(twiss.s[mq_list])
+        ecloud_s = (mq_s[:-1] + mq_s[1:])/2.
+        ecloud_l = (mq_s[1:] - mq_s[:-1])
+        ecloud_arc.append(list(ecloud_s))
+        ecloud_lengths.append(list(ecloud_l))
 
 ecloud_lengths_dict = {}
 print('Number of eclouds per arc: %d'%len(ecloud_arc[0]))
@@ -251,4 +263,4 @@ ax5.set_ylabel('$\\mathbf{\\sigma\ [m]}$')
 ax5.set_xlabel('$\\mathbf{s\ [m]}$')
 ax5.grid(False)
 plt.xticks(s_ip, latex_name_ip)
-plt.show()
+plt.show(block=args.plot_block)

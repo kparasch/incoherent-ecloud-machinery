@@ -93,6 +93,7 @@ if do_ecloud:
     ecloud_lattice.set_optics_CO(optics, partCO)
 
     ecloud_lattice.add_tricub_data(pinch_path, 'drift', max_z=max_tau)
+    ecloud_lattice.remove_dipolar_kicks()
 
     tricub_to_tricub_data = {}
     for key in eclouds_info['length'].keys():
@@ -149,9 +150,9 @@ kfm.dict_to_h5(last_dict, output_file, group='output', readwrite_opts='a')
 kfm.dict_to_h5(partCO, output_file, group='closed-orbit', readwrite_opts='a')
 kfm.dict_to_h5(optics, output_file, group='optics', readwrite_opts='a')
 
-args_dict = vars(args)
-for key in args_dict.keys():
-    if args_dict[key] is None:
-        args_dict[key] = 'None'
-kfm.dict_to_h5(args_dict, output_file, group='args', readwrite_opts='a')
+#args_dict = vars(args)
+#for key in args_dict.keys():
+#    if args_dict[key] is None:
+#        args_dict[key] = 'None'
+#kfm.dict_to_h5(args_dict, output_file, group='args', readwrite_opts='a')
 kfm.dict_to_h5(time_dict, output_file, group='time', readwrite_opts='a')

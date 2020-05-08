@@ -2,6 +2,7 @@ import pysixtrack
 import sixtracklib
 import numpy as np
 from scipy.constants import c
+import kostas_filemanager as kfm
 
 def get_DA_distribution(n_particles_approx, n_sigma, ptau_max, epsn_1, epsn_2, optics):
     W = optics['W']
@@ -140,6 +141,36 @@ def random_full_hypersphere(sigma, n_particles, dim, seed = 0):
             sphere[i] = point
             i += 1
     return sphere
+
+def load_state(out_file, p0c_eV):
+    last = kfm.h5_to_obj(out_file, group='last')
+
+    n_part = len(last.x)
+
+    ps = sixtracklib.ParticlesSet()
+    p = ps.Particles(num_particles=n_part)
+
+    for i_part in range(n_part):
+        part = pysixtrack.Particles(p0c=p0c_eV)
+
+        part.x    = last.x[i_part]
+        part.px   = last.px[i_part]
+        part.y    = last.y[i_part]
+        part.py   = last.py[i_part]
+        part.tau  = last.tau[i_part]
+        part.ptau = last.ptau[i_part]
+
+        part.partid = i_part
+        part.state  = last.state[i_part]
+        part.elemid = 0
+        part.turn   = last.at_turn[i_part]
+        if part.state == 1:
+            part.turn += 1
+#        part.turn = 0
+        
+        p.from_pysixtrack(part, i_part)
+
+    return ps
 
 def apply_closed_orbit(init_denormalized_coordinates, partCO):
     part = pysixtrack.Particles(**partCO)

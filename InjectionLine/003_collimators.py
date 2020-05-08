@@ -29,12 +29,8 @@ sbx = {}
 sby = {}
 xco = {}
 yco = {}
-#deg3 = 100. # 133 acts as if 127.5. strange!
-deg3 = 126.91 # 133 acts as if 127.5. strange!
+deg3 = 126.91 
 rot3 = deg3
-#deg3 = 127.5
-#deg3 = 126.91
-#deg3 = 90-127.5
 rad3 = deg3*np.pi/180.
 for i in range(len(twiss.name)):
     elname = twiss.name[i].split(':')[0]
