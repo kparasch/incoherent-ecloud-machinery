@@ -26,7 +26,9 @@ parser.add_argument('--output', nargs='?', default='temp.h5', type=str)
 parser.add_argument('--skip_turns', nargs='?', default=10000, type=int)
 parser.add_argument('--turns_per_checkpoint', nargs='?', default=1000000, type=int)
 parser.add_argument('--last_checkpoint', nargs='?', default=10, type=int)
+parser.add_argument('--n_particles', nargs='?', default=20000, type=int)
 parser.add_argument('--n_sigma', nargs='?', default=5.5, type=float)
+parser.add_argument('--seed', nargs='?', default=0, type=int)
 args = parser.parse_args()
 if args.line_folder[-1] != '/':
     args.line_folder += '/'
@@ -52,6 +54,8 @@ turns_per_checkpoint = args.turns_per_checkpoint
 last_checkpoint = args.last_checkpoint
 n_sigma = args.n_sigma
 copy_destination = args.copy_destination
+n_particles = args.n_particles
+seed = args.seed
 
 if copy_destination is not None:
     shutil.copy(copy_destination + output_file, output_file)
@@ -92,7 +96,6 @@ n_stores1 = 100
 n_stores2 = 1
 epsn_1 = 2.0e-6
 epsn_2 = 2.0e-6
-n_particles = 20000
 
 line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores1, start=checkpoint*turns_per_checkpoint + skip_turns-1, skip=skip_turns, is_rolling=True),'monitor1')
 line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores2, start=checkpoint*turns_per_checkpoint, is_rolling=True),'monitor2')
@@ -102,7 +105,7 @@ if checkpoint == 0:
                                                      n_particles=n_particles, 
                                                      n_sigma=n_sigma, ptau_max=ptau_max, 
                                                      epsn_1=epsn_1, epsn_2=epsn_2, 
-                                                     optics=optics
+                                                     optics=optics, seed=seed
                                                                                      )
     init_denormalized_6D[:,:]=0.
 

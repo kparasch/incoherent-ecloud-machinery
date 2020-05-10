@@ -13,7 +13,7 @@ export PYTHONPATH=$myhome/incoherent-ecloud-machinery/Tools:$PYTHONPATH
 
 which pip
 
-pinch_folder=/eos/user/k/kparasch/Pinches/
+pinch_folder=/eos/user/e/ecincohe/Pinches/
 
 MTI=1.0
 MLI=1.0

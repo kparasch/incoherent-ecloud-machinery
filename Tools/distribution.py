@@ -82,6 +82,8 @@ def get_fma_distribution(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics,
 
 
 def get6D_with_fixed_J3(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics, seed=0):
+    np.random.seed(seed+1234567)
+    np.random.uniform((1,10000))
 
     alfa = optics['alfa']
     V0 = optics['rf_volt_V']

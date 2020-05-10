@@ -142,7 +142,7 @@ N_mp_max_dip = N_MP_ele_init_dip*4
 #B_multip_dip = [0.0] #T
 B_multip_dip = [0.5355] #T
 custom_edensity = None
-#custom_edensity = '/eos/user/k/kparasch/Pinches/edensity_LHC_ArcDip_450GeV_sey1.35_0.7e11ppb.pkl'
+custom_edensity = '/eos/user/k/kparasch/Pinches/edensity_LHC_ArcDip_450GeV_sey1.35_0.7e11ppb.pkl'
 
 # Dedicated Quadrupole E-Cloud Settings
 enable_arc_quad = False

@@ -6,6 +6,7 @@ import os
 import numpy as np
 import time
 import multiprocessing
+import pickle
 
 #sys.path.append(os.path.abspath('../Tools'))
 #sys.path.append(os.path.abspath('../../packages/PyFRIENDS'))
