@@ -18,19 +18,19 @@ from scipy.constants import c as clight
 start_time = time.time()
 
 line_folder = 'Lines/Line_IMO_0/'
-device = 'opencl:0.0'
-ptau_max = 6.6e-4#5.e-4#2.7e-4
+device = 'opencl:0.3'
+ptau_max = 9.5e-4#5.e-4#2.7e-4
 seed = 10
-pinch_path = 'Pinches/refined_Pinch32_MTI4.0_MLI2.0_DTO1.0_DLO1.0.h5'
-ecloud_scale = 0.1
+pinch_path = 'Pinches/refined_LHC_ArcDip_1.35sey_1.2e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5'
+ecloud_scale = 1
 do_ecloud = True
-max_z = 0.22
+max_z = 0.5
 bucket_acceptance = 1.e-3 #(1.e-3 for injection, 0.36e-3 for collisions)
-n_turns = 30
+n_turns = 1000
 n_stores = n_turns
 
-n_particles = 100
-n_particles = 20000
+n_particles = 40
+#n_particles = 20000
 
 
 
