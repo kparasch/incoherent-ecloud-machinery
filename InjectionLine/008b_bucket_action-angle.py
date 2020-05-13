@@ -20,18 +20,19 @@ start_time = time.time()
 
 line_folder = 'Lines/Line_IMO_0/'
 device = 'opencl:0.3'
-ptau_max = 9.5e-4#5.e-4#2.7e-4
+ptau_max = 7.5e-4#5.e-4#2.7e-4
 seed = 10
 pinch_path = 'Pinches/refined_LHC_ArcDip_1.35sey_1.2e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5'
 ecloud_scale = 1
-do_ecloud = True
+do_ecloud = False
 max_z = 0.5
 bucket_acceptance = 1.e-3 #(1.e-3 for injection, 0.36e-3 for collisions)
-n_turns = 200
-n_stores = n_turns
+n_turns = 1000
+n_stores = 50
+skip = n_turns//n_stores
 
-n_particles = 40
-#n_particles = 20000
+#n_particles = 40
+n_particles = 20000
 
 
 
@@ -56,7 +57,7 @@ if do_ecloud:
     for key in eclouds_info['length'].keys():
         eclouds_info['length'][key] *= ecloud_scale/(optics['beta0']*optics['p0c_eV'])
 
-n_sigma = 5
+n_sigma = 0.005
 epsn_1 = 3.5e-6
 epsn_2 = 3.5e-6
 bunch_length = 0.09
@@ -65,11 +66,19 @@ RF_bucket.max_action(bunch_length=bunch_length, optics=optics)
 se1 = np.sqrt(epsn_1/optics['gamma0']/optics['beta0'])
 se2 = np.sqrt(epsn_2/optics['gamma0']/optics['beta0'])
 
-line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores,is_rolling=True),'monitor1')
+line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores,skip=skip,is_rolling=True),'monitor1')
 
-init_denormalized_6D = np.zeros([n_particles,6])
-init_denormalized_6D[:,5] = np.linspace(0, ptau_max, n_particles) 
+#init_denormalized_6D = np.zeros([n_particles,6])
+#tau, ptau = RF_bucket.get_J_shell(ptau_max=ptau_max, n_particles=n_particles, optics=optics)
+##init_denormalized_6D[:,5] = np.linspace(0, ptau_max, n_particles) 
+#init_denormalized_6D[:,4] = tau
+#init_denormalized_6D[:,5] = ptau
 
+
+init_denormalized_6D = distribution.get6D_with_matched_J3_shell(n_particles=n_particles, n_sigma=n_sigma, 
+                                                   ptau_max=ptau_max, epsn_1=epsn_1, epsn_2=epsn_2,
+                                                   optics=optics, seed=0
+                                                  )
 init_denormalized_6D = distribution.apply_closed_orbit(init_denormalized_6D, partCO)
 
 ps = distribution.get_sixtracklib_particle_set(init_denormalized_6D, p0c_eV=optics['p0c_eV'])
@@ -129,6 +138,9 @@ init_dict = {'x'    : init_denormalized_6D[:,0],
              'J1'   : J1/se1**2,
              'J2'   : J2/se2**2
              }
-
+plt.figure(2)
+for ii in range(n_stores):
+    hist, be = np.histogram(zeta[ii,:], range=(-0.4,0.4), bins=50)
+    plt.plot(0.5*(be[1:]+be[:-1]), hist)
 #kfm.dict_to_h5(output_to_save, f'fma_tunes_ec_scale{ecloud_scale:.2f}_IMO_0_'+sys.argv[2]+'.h5')
 plt.show()

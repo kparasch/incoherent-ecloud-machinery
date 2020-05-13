@@ -3,6 +3,7 @@ import sixtracklib
 import numpy as np
 from scipy.constants import c
 import kostas_filemanager as kfm
+import RF_bucket
 
 def get_DA_distribution(n_particles_approx, n_sigma, ptau_max, epsn_1, epsn_2, optics):
     W = optics['W']
@@ -74,6 +75,41 @@ def get_fma_distribution(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics,
     init_normalized_6D[:,2] = init_normalized_coordinates_sigma[:,1] * np.sqrt(e2)
     init_normalized_6D[:,3] = 0.
     init_normalized_6D[:,4] = 0.
+    init_normalized_6D[:,5] = init_normalized_6D_temp[:,5]
+
+    init_denormalized_coordinates = np.tensordot(W, init_normalized_6D, [1,1]).T
+
+    return init_denormalized_coordinates
+
+def get6D_with_matched_J3_shell(n_particles, n_sigma, ptau_max, epsn_1, epsn_2, optics, seed=0):
+
+    tau, ptau = RF_bucket.get_J_shell(ptau_max=ptau_max, n_particles=n_particles, optics=optics, seed=seed+1234567)
+
+    W = optics['W']
+    invW = optics['invW']
+    gamma0 = optics['gamma0']
+    beta0 = optics['beta0']
+
+    e1 = epsn_1/(beta0*gamma0)
+    e2 = epsn_2/(beta0*gamma0)
+
+
+    init_denormalized_6D = np.empty([n_particles, 6])
+    init_denormalized_6D[:,0] = 0.
+    init_denormalized_6D[:,1] = 0.
+    init_denormalized_6D[:,2] = 0.
+    init_denormalized_6D[:,3] = 0.
+    init_denormalized_6D[:,4] = tau
+    init_denormalized_6D[:,5] = ptau
+    init_normalized_6D_temp = np.tensordot(invW, init_denormalized_6D, [1,1]).T
+    init_normalized_coordinates_sigma = random_full_hypersphere(n_sigma, n_particles, dim=4, seed=seed)
+
+    init_normalized_6D = np.empty([n_particles, 6])
+    init_normalized_6D[:,0] = init_normalized_coordinates_sigma[:,0] * np.sqrt(e1)
+    init_normalized_6D[:,1] = init_normalized_coordinates_sigma[:,1] * np.sqrt(e1)
+    init_normalized_6D[:,2] = init_normalized_coordinates_sigma[:,2] * np.sqrt(e2)
+    init_normalized_6D[:,3] = init_normalized_coordinates_sigma[:,3] * np.sqrt(e2)
+    init_normalized_6D[:,4] = init_normalized_6D_temp[:,4]
     init_normalized_6D[:,5] = init_normalized_6D_temp[:,5]
 
     init_denormalized_coordinates = np.tensordot(W, init_normalized_6D, [1,1]).T
