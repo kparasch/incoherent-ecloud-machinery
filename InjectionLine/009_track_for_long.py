@@ -13,7 +13,7 @@ import pickle
 import argparse
 import shutil
 
-parser = argparse.ArgumentParser(description='DA simulations with e-clouds')
+parser = argparse.ArgumentParser(description='Long tracking simulations with e-clouds')
 parser.add_argument('--ecloud', dest='do_ecloud', action='store_true')
 parser.add_argument('--device', nargs='?', default=None, type=str)
 parser.add_argument('--copy_destination', nargs='?', default=None, type=str)
@@ -101,13 +101,14 @@ line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores1, start=
 line.append_element(pysixtrack.elements.BeamMonitor(num_stores=n_stores2, start=checkpoint*turns_per_checkpoint, is_rolling=True),'monitor2')
 
 if checkpoint == 0:
-    init_denormalized_6D = distribution.get6D_with_fixed_J3(
-                                                     n_particles=n_particles, 
-                                                     n_sigma=n_sigma, ptau_max=ptau_max, 
-                                                     epsn_1=epsn_1, epsn_2=epsn_2, 
-                                                     optics=optics, seed=seed
-                                                                                     )
-    init_denormalized_6D[:,:]=0.
+    init_denormalized_6D = distribution.get6D_with_matched_J3_shell(n_particles=n_particles, 
+                                                                    n_sigma=n_sigma, 
+                                                                    ptau_max=ptau_max, 
+                                                                    epsn_1=epsn_1, 
+                                                                    epsn_2=epsn_2,
+                                                                    optics=optics, 
+                                                                    seed=seed
+                                                                   )
 
     init_denormalized_6D = distribution.apply_closed_orbit(init_denormalized_6D, partCO)
 
