@@ -25,6 +25,7 @@ ptau_max=0.
 
 intensity=0
 do_ecloud=
+restart_job=false
 #### Argument Parser ####
 for i in "$@"
 do
@@ -61,6 +62,10 @@ case $i in
     ecloud=--ecloud
     shift
     ;;
+    --restart)
+    restart_job=true
+    shift
+    ;;
     *)
 
     ;;
@@ -83,38 +88,40 @@ tracking_arguments="${ecloud} --copy_destination ${copy_destination} --line_fold
 --skip_turns ${skip_turns} --turns_per_checkpoint ${turns_per_checkpoint} \
 --last_checkpoint ${last_checkpoint}"
 
-if [[ -f "${copy_destination}/${job_name}.h5" ]]
+if [ "$restart_job" == false ]
 then
-    echo "ERROR: ${copy_destination}/${job_name}.h5 exists, exiting.."
-    exit 1
-fi    
-if [[ -d "$job_name" ]]
-then
-    echo "ERROR: $job_name exists, exiting.."
-    exit 1
-fi    
-if [[ "$job_name" == "wrong_job_name" ]]
-then
-    echo "ERROR: $job_name is wrong, exiting.."
-    exit 1
-fi    
-if [[ -d "$job_name" ]]
-then
-    echo "ERROR: $job_name exists, exiting.."
-    exit 1
-fi    
-
-python initialize_file.py ${copy_destination}/${job_name}.h5
-
-mkdir $job_name
-
-cp ../InjectionLine/009_track_for_long.py $job_name/
-cp ../Tools/kostas_filemanager.py         $job_name/
-cp ../Tools/distribution.py               $job_name/
-cp ../Tools/RF_bucket.py                  $job_name/
-cp ../Tools/normalization.py              $job_name/
-cp ../Tools/ecloud_sixtracklib_helpers.py $job_name/
-
+    if [[ -f "${copy_destination}/${job_name}.h5" ]]
+    then
+        echo "ERROR: ${copy_destination}/${job_name}.h5 exists, exiting.."
+        exit 1
+    fi    
+    if [[ -d "$job_name" ]]
+    then
+        echo "ERROR: $job_name exists, exiting.."
+        exit 1
+    fi    
+    if [[ "$job_name" == "wrong_job_name" ]]
+    then
+        echo "ERROR: $job_name is wrong, exiting.."
+        exit 1
+    fi    
+    if [[ -d "$job_name" ]]
+    then
+        echo "ERROR: $job_name exists, exiting.."
+        exit 1
+    fi    
+    
+    python initialize_file.py ${copy_destination}/${job_name}.h5
+    
+    mkdir $job_name
+    
+    cp ../InjectionLine/009_track_for_long.py $job_name/
+    cp ../Tools/kostas_filemanager.py         $job_name/
+    cp ../Tools/distribution.py               $job_name/
+    cp ../Tools/RF_bucket.py                  $job_name/
+    cp ../Tools/normalization.py              $job_name/
+    cp ../Tools/ecloud_sixtracklib_helpers.py $job_name/
+fi
 
 echo "============== start executable file ============="
 tee $job_name/$job_name.sh << EOF
@@ -126,6 +133,8 @@ unset PYTHONHOME
 unset PYTHONPATH
 source \$myhome/miniconda3/bin/activate ""
 export PATH=\$myhome/miniconda3/bin:\$PATH
+
+rm -r ~/.nv/ComputeCache
 
 cd $job_name
 echo \$1
