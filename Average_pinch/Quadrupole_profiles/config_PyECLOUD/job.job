@@ -1,0 +1,33 @@
+#!/bin/bash
+
+PYECLOUDPATH=/afs/cern.ch/user/k/kparasch/work/public/ecloud_sixtracklib/packages/PyFRIENDS
+CURRDIR=/afs/cern.ch/work/k/kparasch/public/ecloud_sixtracklib/incoherent-ecloud-machinery/Average_pinch/Quadrupole_profiles/simulations/injection_ArcQuad_MQF_intensity_0.70e11ppb_sey_1.20_VRF_8MV_9
+TARGETDIR=/eos/user/e/ecincohe/Quadrupole_initial_states/injection_ArcQuad_MQF_intensity_0.70e11ppb_sey_1.20_VRF_8MV_9
+export CURRDIR
+export TARGETDIR
+
+source /afs/cern.ch/user/k/kparasch/work/public/ecloud_sixtracklib/miniconda3/bin/activate
+which python
+
+PYTHONPATH=$PYECLOUDPATH
+export PYTHONPATH
+echo $PYTHONPATH
+
+
+# Copy input and executable
+cp ${PYECLOUDPATH}/PyECLOUD/main.py .
+
+cp ${CURRDIR}/*.input .
+cp ${CURRDIR}/*.beam .
+cp ${CURRDIR}/*.mat .
+
+
+#execute beam generation
+python main.py
+
+#save result
+cp Pyecltest.mat ${CURRDIR}
+mkdir ${TARGETDIR}
+cp Pyecltest.mat ${TARGETDIR}
+cp MP_state_* ${TARGETDIR}
+
