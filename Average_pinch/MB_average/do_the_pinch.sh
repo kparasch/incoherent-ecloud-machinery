@@ -16,7 +16,7 @@ which pip
 pinch_name="wrong_pinch_name"
 workers=24
 nPinches=4000
-final_destination=/eos/project/e/ecloud-simulations/kparasch/Pinches/MQF/
+final_destination=/eos/project/e/ecloud-simulations/kparasch/Pinches/MB
 
 
 #### Argument Parser ####
@@ -27,8 +27,8 @@ case $i in
     pinch_name="${i#*=}"
     shift
     ;;
-    --states=*)
-    states="${i#*=}"
+    --edensity=*)
+    edensity="${i#*=}"
     shift
     ;;
     --workers=*)
@@ -69,7 +69,7 @@ python3 replace_intensity.py simulations/$pinch_name/Simulation_parameters.py $i
 echo "============== start submit file ============="
 tee temp_submit_file.sub << EOF
 executable  = aver_exec.sh
-arguments = $pinch_name $workers $nPinches $final_destination $states
+arguments = simulations/$pinch_name $workers $nPinches $final_destination $edensity
 output = simulations/$pinch_name/htcondor.out
 error = simulations/$pinch_name/htcondor.err
 log = simulations/$pinch_name/htcondor.log

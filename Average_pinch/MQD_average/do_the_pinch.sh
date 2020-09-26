@@ -16,7 +16,7 @@ which pip
 pinch_name="wrong_pinch_name"
 workers=24
 nPinches=4000
-final_destination=/eos/project/e/ecloud-simulations/kparasch/Pinches/MQF/
+final_destination=/eos/project/e/ecloud-simulations/kparasch/Pinches/MQD
 
 
 #### Argument Parser ####

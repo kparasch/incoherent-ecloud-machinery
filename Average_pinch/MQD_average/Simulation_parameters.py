@@ -17,10 +17,10 @@ n_segments = 1
 name = None
 s = None
 alpha_x =0.# -1.44
-beta_x = 212.72 #80.51
+beta_x = 42.74 #80.51
 D_x = 0.#1.52
 alpha_y =0.# 1.44
-beta_y = 21.53 #80.79
+beta_y = 122.47 #80.79
 D_y = 0.
 accQ_x = 62.27
 accQ_y = 60.295
@@ -120,10 +120,10 @@ custom_target_grid_arcs = None
 
 # # Uncomment for custom grid
 custom_target_grid_arcs = {
-     'x_min_target': -11.e-3,
-     'x_max_target': 11.e-3,
-     'y_min_target': -4.e-3,
-     'y_max_target': 4.e-3,
+     'x_min_target': -5.3e-3,
+     'x_max_target': 5.3e-3,
+     'y_min_target': -8.4e-3,
+     'y_max_target': 8.4e-3,
      #'x_min_target': -7.6e-3,
      #'x_max_target': 7.6e-3,
      #'y_min_target': -5.8e-3,
@@ -153,7 +153,7 @@ enable_arc_quad = True
 fraction_device_quad = 7.000000e-02
 N_mp_ele_quad = 500000
 N_mp_max_quad = 2000000
-B_multip_quad = [0., 12.1] #T
+B_multip_quad = [0.,-12.1] #T
 folder_path = '/afs/cern.ch/work/k/kparasch/public/ecloud_sixtracklib/incoherent-ecloud-machinery/Average_pinch/Quadrupole_profiles/'
 sey_load_quad = 1.3
 #filename_state = 'combined_distribution_sey_%.2f_sigmat_%.3fns_450Gev_N_mp_%d_symm'%(sey_load_quad, sigma_z/c*1e9,N_mp_ele_quad)
