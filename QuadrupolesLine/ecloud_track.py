@@ -133,7 +133,6 @@ elif args.jobtype == 'DA':
                                                          r_N=args.DA_r_N, theta_N=args.DA_theta_N
                                                          
                                                                                          )
-    print(f'Number of particles tracked: {da_particles}')
     
     init_denormalized_6D = distribution.apply_closed_orbit(init_denormalized_6D, sim_input['partCO'])
     ps = distribution.get_sixtracklib_particle_set(init_denormalized_6D, p0c_eV=optics['p0c_eV'])
@@ -202,6 +201,7 @@ if args.jobtype =='LE':
             kfm.dict_to_h5(skip_dict, args.output, group=f'turn{turn:d}', readwrite_opts='a')
     
         kfm.overwrite(checkpoint_dict, args.output, group='checkpoint')
+        kfm.dict_to_h5(checkpoint_dict, args.output, group=f'checkpoint{cc}')
     
         if args.copy_destination is not None:
             shutil.copy(args.output, args.copy_destination + args.output)
@@ -217,12 +217,15 @@ if args.jobtype =='LE':
     kfm.overwrite(args_dict, args.output, group='args')
     kfm.overwrite(time_dict, args.output, group='time')
 
+    if args.copy_destination is not None:
+        shutil.copy(args.output, args.copy_destination + args.output)
+
 elif args.jobtype == 'DA':
     start_tracking = time.time()
     job.track_until(turn_to_track)
     job.collect()
     end_tracking = time.time()
-    print(f'Tracking time: {(end_tracking - start_tracking)/60.:.4f}mins')
+    print(f'{da_particles} tracked in {(end_tracking - start_tracking)/60.:.4f} mins')
     
     parts = job.output.particles[0]
     shape = A1_A2_in_sigma.shape[:2]
