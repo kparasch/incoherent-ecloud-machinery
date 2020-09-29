@@ -147,7 +147,7 @@ class LatticeWithEclouds:
             temp_tc_index = temp_lattice.cbuffer.n_objects
             temp_tc = sixtracklib.TriCub(cbuffer=temp_lattice.cbuffer)
             first_ecloud = [key for key in self.tricubs.keys() if key.split('.')[1] == this_ecloud_type][0]
-            print('First ecloud index: {first_ecloud}')
+            print(f'First ecloud index: {first_ecloud}')
             temp_tc.length = self.tricubs[first_ecloud].length
             temp_tc.x_shift = 0.
             temp_tc.y_shift = 0.
