@@ -1,0 +1,2 @@
+condor_submit htcondor.sub
+condor_q --nobatch
