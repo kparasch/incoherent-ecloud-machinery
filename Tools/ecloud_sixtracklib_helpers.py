@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import copy
 
 import sixtracklib
 import pysixtrack
@@ -10,9 +11,10 @@ import normalization
 
 class LatticeWithEclouds:
 
-    def __init__(self, line, eclouds_info, particles_set, device=None):
-
-        self.tricub_data_buffer = cobjects.CBuffer()
+    def __init__(self, sim_input, particles_set, ecloud_types=None, device=None):
+        
+        if ecloud_types is None:
+            ecloud_types = []
 
         self.tricub_data = {}
         self.tricub_data_indices = {}
@@ -24,7 +26,13 @@ class LatticeWithEclouds:
 
         self.elements = sixtracklib.Elements()
         self.tricub_data_buffer = cobjects.CBuffer()
-        self.eclouds_info = eclouds_info
+
+        line = sim_input['line']
+        self.eclouds_info = sim_input['eclouds_info']
+
+        self.optics = sim_input['optics']
+        self.partCO = pysixtrack.Particles(**sim_input['partCO'])
+        
 
         self.tune_is_valid_list = []
         self.turn_q_list = []
@@ -35,8 +43,9 @@ class LatticeWithEclouds:
 
         self.n_particles = len(particles_set.particles[0].particle_id)
  
+        self.ecloud_types = ecloud_types
 
-        ecloud_list = eclouds_info['length'].keys()
+        ecloud_list = [key for key in self.eclouds_info['type'].keys() if self.eclouds_info['type'][key] in ecloud_types]
 
         print(f'Number of elements in line before cleaning: {len(line.elements)}')
         self.clean_line(line, ecloud_list)
@@ -127,91 +136,95 @@ class LatticeWithEclouds:
             index = 8 * (nx * ( ny * kk0))
             tricub_data.table_addr[index: index + 8 * nx * ny] = phi[:, :, :].transpose(1,0,2).flatten()
 
-        self.tricub_data_buffer_ids[data_name] = self.job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
+#        self.tricub_data_buffer_ids[data_name] = self.job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
 
         return
 
     def remove_dipolar_kicks(self):
-        temp_lattice = sixtracklib.Elements()
-        self.elements
-        sixtracklib.Drift(cbuffer=temp_lattice.cbuffer)
-        temp_tc_index = temp_lattice.cbuffer.n_objects
-        temp_tc = sixtracklib.TriCub(cbuffer=temp_lattice.cbuffer)
-        first_ecloud = list(self.tricubs.keys())[0]
-        temp_tc.length = self.tricubs[first_ecloud].length
-        temp_tc.x_shift = 0.
-        temp_tc.y_shift = 0.
-        temp_tc.tau_shift = 0.
-        temp_tc.dipolar_kick_px = 0.
-        temp_tc.dipolar_kick_py = 0.
-        temp_tc.dipolar_kick_ptau = 0.
+        for this_ecloud_type in self.ecloud_types:
+            temp_lattice = sixtracklib.Elements()
+            sixtracklib.Drift(cbuffer=temp_lattice.cbuffer)
+            temp_tc_index = temp_lattice.cbuffer.n_objects
+            temp_tc = sixtracklib.TriCub(cbuffer=temp_lattice.cbuffer)
+            first_ecloud = [key for key in self.tricubs.keys() if key.split('.')[1] == this_ecloud_type][0]
+            print(f'First ecloud index: {first_ecloud}')
+            temp_tc.length = self.tricubs[first_ecloud].length
+            temp_tc.x_shift = 0.
+            temp_tc.y_shift = 0.
+            temp_tc.tau_shift = 0.
+            temp_tc.dipolar_kick_px = 0.
+            temp_tc.dipolar_kick_py = 0.
+            temp_tc.dipolar_kick_ptau = 0.
 
-        temp_ps = particles_set = sixtracklib.ParticlesSet()
-        particles  = particles_set.Particles(num_particles=1)
+            temp_ps = particles_set = sixtracklib.ParticlesSet()
+            particles  = particles_set.Particles(num_particles=1)
 
-        temp_part = pysixtrack.Particles(p0c=self.partCO.p0c)
-        temp_part.x = 0
-        temp_part.px = 0
-        temp_part.y = 0
-        temp_part.py = 0
-        temp_part.tau = 0
-        temp_part.ptau = 0
-        temp_part.state = 1
-        temp_part.partid = 0
-        temp_part.elemid = 0
-        temp_part.turn = 0
-        particles.from_pysixtrack(temp_part, 0)
+            temp_part = pysixtrack.Particles(p0c=self.partCO.p0c)
+            temp_part.x = 0
+            temp_part.px = 0
+            temp_part.y = 0
+            temp_part.py = 0
+            temp_part.tau = 0
+            temp_part.ptau = 0
+            temp_part.state = 1
+            temp_part.partid = 0
+            temp_part.elemid = 0
+            temp_part.turn = 0
+            particles.from_pysixtrack(temp_part, 0)
 
-        temp_job = sixtracklib.TrackJob(temp_lattice, temp_ps, device=None)
-        temp_tricub_data_buffer_id = temp_job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
+            temp_job = sixtracklib.TrackJob(temp_lattice, temp_ps, device=None)
+            temp_tricub_data_buffer_id = temp_job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
 
-        first_tricub_data = list(self.tricub_data.keys())[0]
-        sixtracklib.TriCub_buffer_create_assign_address_item(
-            temp_job, temp_tc_index, 
-            temp_tricub_data_buffer_id, 
-            self.tricub_data_indices[first_tricub_data]
-        )
-        temp_job.commit_address_assignments()
-        temp_job.assign_all_addresses()
+            first_tricub_data = list(self.tricub_data.keys())[0]
+            sixtracklib.TriCub_buffer_create_assign_address_item(
+                temp_job, temp_tc_index, 
+                temp_tricub_data_buffer_id, 
+                self.tricub_data_indices[first_tricub_data]
+            )
+            temp_job.commit_address_assignments()
+            temp_job.assign_all_addresses()
 
-        temp_job.track_until(1)
+            temp_job.track_until(1)
 
-        dipolar_kick_px = particles.px[0]
-        dipolar_kick_py = particles.py[0]
-        dipolar_kick_ptau = particles.ptau[0]
-        print(dipolar_kick_px, dipolar_kick_py, dipolar_kick_ptau)
-        #dipolar_kick_px = 0.* particles.px[0]
-        #dipolar_kick_py = 0.*particles.py[0]
-        #dipolar_kick_ptau = 0.*particles.ptau[0]
-        for tc in self.tricubs.keys():
-            tc_index = self.tricub_indices[tc]
-            tricub = self.job.beam_elements_buffer.get_object(tc_index)
-            tricub.dipolar_kick_px = dipolar_kick_px
-            tricub.dipolar_kick_py = dipolar_kick_py
-            tricub.dipolar_kick_ptau = dipolar_kick_ptau
-        self.job.push_beam_elements()
+            dipolar_kick_px = particles.px[0]
+            dipolar_kick_py = particles.py[0]
+            dipolar_kick_ptau = particles.ptau[0]
+            print(f'{this_ecloud_type} dipolar kicks, px:{dipolar_kick_px}, py:{dipolar_kick_py}, ptau:{dipolar_kick_ptau}')
+            #dipolar_kick_px = 0.* particles.px[0]
+            #dipolar_kick_py = 0.*particles.py[0]
+            #dipolar_kick_ptau = 0.*particles.ptau[0]
+            for tc in self.tricubs.keys():
+                if tc.split('.')[1] == this_ecloud_type:
+                    tc_index = self.tricub_indices[tc]
+                    tricub = self.job.beam_elements_buffer.get_object(tc_index)
+                    tricub.dipolar_kick_px = dipolar_kick_px
+                    tricub.dipolar_kick_py = dipolar_kick_py
+                    tricub.dipolar_kick_ptau = dipolar_kick_ptau
+            self.job.push_beam_elements()
 
         return
 
-    def finalize_assignments(self, tricub_to_tricubdata):
+    def finalize_assignments(self):
+        tricub_to_tricubdata = {}
+        for key in self.eclouds_info['type'].keys():
+            this_type = self.eclouds_info['type'][key]
+            if this_type in self.ecloud_types:
+                tricub_to_tricubdata[key] = this_type
+
         tricubs = self.tricubs.keys()
 
-        for tc in tricubs:
-            tcdata = tricub_to_tricubdata[tc]
-            sixtracklib.TriCub_buffer_create_assign_address_item(
-                self.job, self.tricub_indices[tc], 
-                self.tricub_data_buffer_ids[tcdata], 
-                self.tricub_data_indices[tcdata]
-            )
-        self.job.commit_address_assignments()
-        self.job.assign_all_addresses()
+        if tricub_to_tricubdata:
+            tricub_data_buffer_id = self.job.add_stored_buffer(cbuffer=self.tricub_data_buffer)
+            for tc in tricubs:
+                tcdata = tricub_to_tricubdata[tc]
+                sixtracklib.TriCub_buffer_create_assign_address_item(
+                    self.job, self.tricub_indices[tc], 
+                    tricub_data_buffer_id, 
+                    self.tricub_data_indices[tcdata]
+                )
+            self.job.commit_address_assignments()
+            self.job.assign_all_addresses()
 
-        return
-
-    def set_optics_CO(self, optics, partCO):
-        self.optics = optics
-        self.partCO = pysixtrack.Particles(**partCO)
-        
         return
 
     def fma_tracking(self, distance_between_tunes=10000, until_turn=20000, num_stores=101):
@@ -365,10 +378,13 @@ def track_to_checkpoint(job, n_particles, checkpoint=1, checkpoint_turns=1e6, mo
     return skip_dicts, last_dict
 
 
-def update_optics(line, eclouds_info, optics, partCO, pinch_path):
-    new_optics = optics.copy()
-    d = 1.e-10
-    init_part = pysixtrack.Particles(**partCO)
+def update_optics(sim_input, ecloud_sources, d=1.e-8):
+    
+    sim_input_copy = copy.deepcopy(sim_input)
+
+    new_optics = sim_input_copy['optics']
+
+    init_part = pysixtrack.Particles(**sim_input_copy['partCO'])
     init_part.x     += np.array([0., 1.*d, 0., 0., 0., 0., 0.])
     init_part.px    += np.array([0., 0., 1.*d, 0., 0., 0., 0.])
     init_part.y     += np.array([0., 0., 0., 1.*d, 0., 0., 0.])
@@ -398,16 +414,14 @@ def update_optics(line, eclouds_info, optics, partCO, pinch_path):
 
         p.from_pysixtrack(part, i_part)
 
-    ecloud_lattice = LatticeWithEclouds(line, eclouds_info, ps, device=None)
-    ecloud_lattice.set_optics_CO(optics, partCO)
-    ecloud_lattice.add_tricub_data(pinch_path, 'dipole', max_z=0.05)
+    ecloud_lattice = LatticeWithEclouds(sim_input_copy, ps, ecloud_types=list(ecloud_sources.keys()), device=None)
+    
+    for key in ecloud_sources.keys():
+        ecloud_lattice.add_tricub_data(ecloud_sources[key], key, max_z=0.05)
     ecloud_lattice.remove_dipolar_kicks()
-
-    tricub_to_tricub_data = {}
-    for key in eclouds_info['length'].keys():
-        tricub_to_tricub_data[key] = 'dipole'
-    ecloud_lattice.finalize_assignments(tricub_to_tricub_data)
+    ecloud_lattice.finalize_assignments()
     job = ecloud_lattice.job
+
     job.track_until(1)
 
     X_init = np.empty([6,7])
@@ -445,12 +459,29 @@ def update_optics(line, eclouds_info, optics, partCO, pinch_path):
     q2 = np.arccos(R[2,2])/np.pi/2.
     Qs = np.arccos(R[4,4])/np.pi/2.
     
+    new_optics['old_W'] = copy.deepcopy(new_optics['W'])
+    new_optics['old_invW'] = copy.deepcopy(new_optics['invW'])
+    new_optics['old_R'] = copy.deepcopy(new_optics['R'])
+
     new_optics['W'] = W
     new_optics['invW'] = invW
     new_optics['R'] = R
     new_optics['new_Qs'] = Qs
     new_optics['new_q1'] = q1
     new_optics['new_q2'] = q2
+
+    int_q1 = int(new_optics['q1'])
+    int_q2 = int(new_optics['q2'])
+    old_q1 = new_optics['q1'] - int_q1
+    old_q2 = new_optics['q2'] - int_q2
+    old_q3 = new_optics['Qs']
+    new_q1 = new_optics['new_q1']
+    new_q2 = new_optics['new_q2']
+    new_q3 = new_optics['new_Qs']
+    print(f'Int. tunes: int(q1) = {int_q1}, int(q2) = {int_q2}')
+    print(f'Old tunes: q1 = {old_q1:.4f}, q2 = {old_q2:.4f}, q3 = {old_q3:.6f}')
+    print(f'New tunes: q1 = {new_q1:.4f}, q2 = {new_q2:.4f}, q3 = {new_q3:.6f}')
+    print(f'Tune shift: \u0394q1 = {new_q1-old_q1:.4f}, \u0394q2 = {new_q2-old_q2:.4f}, \u0394q3 = {new_q3-old_q3:.6f}')
 
     return new_optics
 
