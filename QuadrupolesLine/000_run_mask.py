@@ -2,15 +2,39 @@ import pysixtrack
 import matplotlib.pyplot as plt
 import os
 import shutil
+from replaceline import replaceline_and_save
 
 from cpymad.madx import Madx
 
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--noblock', dest='plot_block', action='store_false')
+parser.add_argument('--qx0', nargs='?', default=62.270, type=float)
+parser.add_argument('--qy0', nargs='?', default=60.295, type=float)
+parser.add_argument('--qprime', nargs='?', default=20., type=float)
+parser.add_argument('--I_MO', nargs='?', default=40., type=float)
 args = parser.parse_args()
 
 mad = Madx()
+
+
+fname = 'lhc2018_injection.mask.copy'
+replaceline_and_save(fname,
+                     findln='qx0 =',
+                     newline=f'qx0 = {args.qx0:.3f};'
+                    )
+replaceline_and_save(fname,
+                     findln='qy0 =',
+                     newline=f'qy0 = {args.qy0:.3f};'
+                    )
+replaceline_and_save(fname,
+                     findln='qprime =',
+                     newline=f'qprime = {args.qprime:.1f};'
+                    )
+replaceline_and_save(fname,
+                     findln='I_MO =',
+                     newline=f'I_MO = {args.I_MO:.1f};'
+                    )
 
 mad.call('lhc2018_injection.mask')
 
