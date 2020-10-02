@@ -30,8 +30,8 @@ parser.add_argument('--output', nargs='?', default='temp.h5', type=str)
 parser.add_argument('--skip_turns', nargs='?', default=10000, type=int)
 parser.add_argument('--turns_per_checkpoint', nargs='?', default=1000000, type=int)
 parser.add_argument('--DA_turns', nargs='?', default=1000000, type=int)
-parser.add_argument('--DA_r_N', nargs='?', default=148, type=int)
-parser.add_argument('--DA_theta_N', nargs='?', default=109, type=int)
+parser.add_argument('--DA_r_N', nargs='?', default=200, type=int)
+parser.add_argument('--DA_theta_N', nargs='?', default=100, type=int)
 parser.add_argument('--last_checkpoint', nargs='?', default=10, type=int)
 parser.add_argument('--n_particles', nargs='?', default=20000, type=int)
 parser.add_argument('--n_sigma', nargs='?', default=5.5, type=float)
@@ -61,9 +61,6 @@ for key in ecloud_sources.keys():
     print(f'{key}:{ecloud_sources[key]}')
 
 
-if args.copy_destination is not None:
-    shutil.copy(args.copy_destination + args.output, args.output)
-
 with open(args.simulation_input, 'rb') as fid:
     sim_input = pickle.load(fid)
 sim_input['line'] = pysixtrack.Line.from_dict(sim_input['line'], keepextra=True)
@@ -82,6 +79,9 @@ start_time = time.time()
 
 
 if args.jobtype == 'LE':
+    if args.copy_destination is not None:
+        shutil.copy(args.copy_destination + args.output, args.output)
+
     checkpoint = kfm.h5_to_dict(args.output, group='checkpoint')['checkpoint']
     print(f'Starting from checkpoint: {checkpoint}!')
 

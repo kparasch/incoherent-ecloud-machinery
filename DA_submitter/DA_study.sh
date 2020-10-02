@@ -7,23 +7,39 @@ qy=60.295
 qprime=20
 IMO=40
 VRF=8
-intensity=1.20
+#intensity=1.20
 
 seyMB=1.30
 seyMQ=1.30
-MB=--MB
-MQ=--MQ
-[[ "$MB" == "--MB" ]] && MB_name=_${seyMB}seyMB || MB_name=;
-[[ "$MQ" == "--MQ" ]] && MQ_name=_${seyMQ}seyMQ || MQ_name=;
+#MB=--MB ; [[ "$MB" == "--MB" ]] && MB_name=_${seyMB}seyMB || MB_name=;
+#MQ=--MQ ; [[ "$MQ" == "--MQ" ]] && MQ_name=_${seyMQ}seyMQ || MQ_name=;
+#
+#job_name=DA_LHC_450GeV${MB_name}${MQ_name}_${intensity}e11ppb_${qx}qx_${qy}qy_${qprime}qprime_${IMO}IMO_${VRF}VRF_${ptau_max}ptau
+#./submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
+#                     --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
+#                     --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
 
-job_name=DA_LHC_450GeV${MB_name}${MQ_name}_${intensity}e11ppb_${qx}qx_${qy}qy_${qprime}qprime_${IMO}IMO_${VRF}VRF_${ptau_max}ptau
+for intensity in 1.20 1.10 1.00 0.90 0.80 0.70 0.60 0.50 0.40 0.30 
+do
 
-echo submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
-                     --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
-                     --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
+    MB=--MB ; [[ "$MB" == "--MB" ]] && MB_name=_${seyMB}seyMB || MB_name=;
+    MQ=--MQ ; [[ "$MQ" == "--MQ" ]] && MQ_name=_${seyMQ}seyMQ || MQ_name=;
+    job_name=DA_LHC_450GeV${MB_name}${MQ_name}_${intensity}e11ppb_${qx}qx_${qy}qy_${qprime}qprime_${IMO}IMO_${VRF}VRF_${ptau_max}ptau
+    ./submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
+                         --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
+                         --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
 
-./submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
-                     --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
-                     --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
+    MB=--MB ; [[ "$MB" == "--MB" ]] && MB_name=_${seyMB}seyMB || MB_name=;
+    MQ=     ; [[ "$MQ" == "--MQ" ]] && MQ_name=_${seyMQ}seyMQ || MQ_name=;
+    job_name=DA_LHC_450GeV${MB_name}${MQ_name}_${intensity}e11ppb_${qx}qx_${qy}qy_${qprime}qprime_${IMO}IMO_${VRF}VRF_${ptau_max}ptau
+    ./submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
+                         --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
+                         --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
 
-
+    MB=     ; [[ "$MB" == "--MB" ]] && MB_name=_${seyMB}seyMB || MB_name=;
+    MQ=--MQ ; [[ "$MQ" == "--MQ" ]] && MQ_name=_${seyMQ}seyMQ || MQ_name=;
+    job_name=DA_LHC_450GeV${MB_name}${MQ_name}_${intensity}e11ppb_${qx}qx_${qy}qy_${qprime}qprime_${IMO}IMO_${VRF}VRF_${ptau_max}ptau
+    ./submit_da_ecloud_v1.0.sh --job_name=${job_name} --ptau_max=${ptau_max} \
+                         --qx=${qx} --qy=${qy} --qprime=${qprime} --IMO=${IMO} --VRF=${VRF} \
+                         --seyMB=${seyMB} --seyMQ=${seyMQ} ${MB} ${MQ} --intensity=${intensity}
+done

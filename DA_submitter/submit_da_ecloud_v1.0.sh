@@ -92,90 +92,93 @@ done
 if  [ "$MB" == "true" ]
 then
     case "$intensity" in
-        0.30) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.35) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.40) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.45) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.50) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.55) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.60) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.65) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.70) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.75) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.80) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.85) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.90) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.95) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.00) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.05) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.10) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.15) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.20) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.25) MBpinch="--mb ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0) MBpinch=
+        0.30) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.35) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.40) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.45) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.50) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.55) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.60) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.65) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.70) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.75) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.80) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.85) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.90) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0.95) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.00) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.05) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.10) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.15) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.20) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        1.25) copyMBpinch="rsync ${repository}/refined_Pinches/MB/refined_LHC_MB_450GeV_sey${seyMB}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mb.h5" ; MBpinch="--mb mb.h5" ;;
+        0) copyMBpinch= ; MBpinch=
         ;;
         *) echo "intensity not supported, exiting..." ; exit 1 ;;
     esac
 else
+    copyMBpinch=
     MBpinch=
 fi
 
 if  [ "$MQ" == "true" ]
 then
     case "$intensity" in
-        0.30) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.35) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.40) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.45) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.50) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.55) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.60) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.65) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.70) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.75) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.80) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.85) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.90) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.95) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.00) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.05) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.10) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.15) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.20) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.25) MQFpinch="--mqf ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0) MQFpinch=
+        0.30) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.35) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.40) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.45) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.50) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.55) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.60) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.65) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.70) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.75) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.80) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.85) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.90) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0.95) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.00) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.05) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.10) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.15) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.20) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        1.25) copyMQFpinch="rsync ${repository}/refined_Pinches/MQF/refined_LHC_MQF_450GeV_sey${seyMQ}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqf.h5" ; MQFpinch="--mqf mqf.h5";;
+        0) copyMQFpinch= ; MQFpinch=
         ;;
         *) echo "intensity not supported, exiting..." ; exit 1 ;;
     esac
 
     case "$intensity" in
-        0.30) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.35) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.40) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.45) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.50) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.55) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.60) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.65) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.70) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.75) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.80) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.85) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.90) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0.95) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.00) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.05) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.10) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.15) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.20) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        1.25) MQDpinch="--mqd ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5" ;;
-        0) MQDpinch=
+        0.30) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.30e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.35) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.35e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.40) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.40e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.45) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.45e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.50) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.50e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.55) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.55e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.60) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.60e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.65) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.65e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.70) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.70e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.75) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.75e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.80) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.80e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.85) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.85e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.90) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.90e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0.95) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_0.95e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.00) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.00e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.05) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.05e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.10) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.10e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.15) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.15e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.20) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.20e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        1.25) copyMQDpinch="rsync ${repository}/refined_Pinches/MQD/refined_LHC_MQD_450GeV_sey${seyMQ}_1.25e11ppb_symm2D_MTI2.0_MLI2.0_DTO1.0_DLO1.0.h5 mqd.h5" ; MQDpinch="--mqd mqd.h5";;
+        0) copyMQDpinch= ; MQFpinch=
         ;;
         *) echo "intensity not supported, exiting..." ; exit 1 ;;
     esac
 
 else
+    copyMQFpinch=
     MQFpinch=
+    copyMQDpinch=
     MQDpinch=
 fi
 
@@ -183,7 +186,7 @@ line=$repository/EC_line_v1.0/EC_line_v1.0_qx${qx}_qy${qy}_qprime${qprime}_IMO${
 output_file=$job_name
 copy_destination=$repository/Tracking_Data/DA_450GeV
 tracking_arguments="--jobtype 'DA' --copy_destination ${copy_destination} --simulation_input ${line} \
---ptau_max ${ptau_max} --max_tau ${max_tau} --output ${job_name}.h5 \
+--ptau_max ${ptau_max} --max_tau ${max_tau} --output ${job_name}.h5 --n_sigma 5.7 \
 ${MBpinch} ${MQFpinch} ${MQDpinch}"
 
 if [[ -f "${copy_destination}/${job_name}.h5" ]]
@@ -226,7 +229,12 @@ rm -r ~/.nv/ComputeCache
 
 cd $job_name
 echo \$1
+$copyMBpinch
+$copyMQFpinch
+$copyMQDpinch
 time python ecloud_track_v1.0.py ${tracking_arguments} --device 'opencl:0.0' --seed \$1
+
+exit $?
 
 EOF
 echo "=============== end executable file =============="
@@ -242,6 +250,8 @@ output = simulations/$job_name/htcondor.out
 error = simulations/$job_name/htcondor.err
 log = simulations/$job_name/htcondor.log
 transfer_input_files = simulations/$job_name
+on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)
+max_retries = 3
 request_GPUs = 1
 request_CPUs = 1
 +MaxRunTime = 86400
