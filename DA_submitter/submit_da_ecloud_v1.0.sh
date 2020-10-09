@@ -234,7 +234,7 @@ $copyMQFpinch
 $copyMQDpinch
 time python ecloud_track_v1.0.py ${tracking_arguments} --device 'opencl:0.0' --seed \$1
 
-exit $?
+exit \$?
 
 EOF
 echo "=============== end executable file =============="
@@ -252,6 +252,7 @@ log = simulations/$job_name/htcondor.log
 transfer_input_files = simulations/$job_name
 on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)
 max_retries = 3
+requirements = Machine =!= LastRemoteHost
 request_GPUs = 1
 request_CPUs = 1
 +MaxRunTime = 86400
