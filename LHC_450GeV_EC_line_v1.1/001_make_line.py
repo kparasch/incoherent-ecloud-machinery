@@ -264,8 +264,8 @@ sig1_nonlin, sig2_nonlin, sig1_lin, sig2_lin = pyht_beamsize.sigmas(epsn_x=epsn_
 
 ecloud_beta_dict = {}
 for name,betx,bety in zip(name_ec, betx_ec, bety_ec):
-    ecloud_beta_dict[name] = {'betx' : betx}
-    ecloud_beta_dict[name]['bety'] = bety
+    ecloud_beta_dict[name[:-2]] = {'betx' : betx}
+    ecloud_beta_dict[name[:-2]]['bety'] = bety
 with open('ecloud_beta.pkl','wb') as fid:
     pickle.dump(ecloud_beta_dict, fid)
 
