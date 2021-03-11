@@ -158,6 +158,7 @@ with open('line_with_ecloud_markers.pkl','wb') as fid:
 with open('ecloud_lengths.pkl','wb') as fid:
     pickle.dump(ecloud_lengths_dict, fid)
 
+
 seq = 'lhcb1'
 mad.use(seq)
 twiss_table = mad.twiss()
@@ -255,6 +256,13 @@ sig1_nonlin, sig2_nonlin, sig1_lin, sig2_lin = pyht_beamsize.sigmas(epsn_x=epsn_
           alpha_mom_compaction=optics['alfa'], circumference=optics['length'],
           rf_harmonic=optics['rf_harmon'], V_rf=optics['rf_volt_V'], gamma0=optics['gamma0'])
 
+
+ecloud_beta_dict = {}
+for name,betx,bety in zip(name_ec, betx_ec, bety_ec):
+    ecloud_beta_dict[name] = {'betx' : betx}
+    ecloud_beta_dict[name]['bety'] = bety
+with open('ecloud_beta.pkl','wb') as fid:
+    pickle.dump(ecloud_beta_dict, fid)
 
 sx = np.mean(np.sqrt(sig11_ec))*1000
 sxerr = np.std(np.sqrt(sig11_ec))*1000

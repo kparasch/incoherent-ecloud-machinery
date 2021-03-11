@@ -50,6 +50,9 @@ with open('optics.pkl', 'wb') as fid:
 with open('part_on_CO.pkl', 'wb') as fid:
     pickle.dump(part_on_CO.to_dict(), fid)
 
+with open('ecloud_beta.pkl', 'rb') as fid:
+    ecloud_beta = pickle.load(fid)
+
 ecloud_x_CO = {}
 ecloud_y_CO = {}
 ecloud_tau_CO = {}
@@ -68,7 +71,9 @@ eclouds_info = {'length' : ecloud_lengths,
                'x_CO' : ecloud_x_CO,
                'y_CO' : ecloud_y_CO,
                'tau_CO' : ecloud_tau_CO,
-               'type' : ecloud_type
+               'type' : ecloud_type,
+               'beta_x' : {key: ecloud_beta[key]['betx'] for key in ecloud_beta.keys()},
+               'beta_y' : {key: ecloud_beta[key]['bety'] for key in ecloud_beta.keys()}
                }
 
 with open('eclouds_info.pkl','wb') as fid:
