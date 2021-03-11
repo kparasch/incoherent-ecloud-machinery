@@ -138,7 +138,12 @@ for ec_type in ec_types:
             ecloud_name = f'ecloud.{ec_type}.{name_arcs[i]}.{j}'
             ecloud_lengths_dict[ecloud_name] = ecloud_length
             mad.input((f'install, element={ecloud_name}, class=marker, at={ec};'))
-            #mad.input(f'install, ecloud.{i%d}.{j%d}
+
+            ## add another element (for additional constant e-density)
+            ecloud_name = f'ecloud.{ec_type}c.{name_arcs[i]}.{j}'
+            ecloud_lengths_dict[ecloud_name] = ecloud_length
+            mad.input((f'install, element={ecloud_name}, class=marker, at={ec};'))
+
 mad.input('flatten;endedit;')
 
 mad.use('lhcb1')
