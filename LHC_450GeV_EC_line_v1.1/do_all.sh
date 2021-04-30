@@ -16,4 +16,4 @@ python 001_make_line.py --noblock
 python 002_setup_eclouds.py --noblock 
 python 003_collimators.py  
 python 004_final_input.py 
-cp simulation_input.pkl Lines/EC_line_v1.0_qx${qx}_qy${qy}_qprime${qprime}_IMO${IMO}A_VRF${VRF}MV.pkl
+cp simulation_input.pkl Lines/EC_line_v1.1_qx${qx}_qy${qy}_qprime${qprime}_IMO${IMO}A_VRF${VRF}MV.pkl
